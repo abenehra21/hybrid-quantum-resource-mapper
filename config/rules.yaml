@@ -1,0 +1,27 @@
+# Every decision threshold lives here. Editing this file changes behaviour; no code edits needed.
+
+# R2: classical statevector simulation is feasible if 16 * 2^n bytes fits in this budget.
+# 16 GiB <=> n_qubits <= 30.
+statevector_memory_gib: 16
+
+# R6: minimum estimated circuit fidelity per algorithm kind.
+fidelity_min:
+  expect: 0.05     # expectation values: mitigation overhead ~1/F^2 explodes below this
+  sample: 0.01     # sampling: need enough good bitstrings among the noise
+  recover: 1.0e-4  # SQD-style: classical post-processing recovers signal from noisy samples
+
+# Default problem/hardware fields for profiles built from generated workloads.
+workload_defaults:
+  precision_target: 1.0e-3
+  deadline_min: 480
+  queue_wait_min: 60
+  shot_budget: 1.0e+7
+  samples_needed: 100000   # sample-kind algorithms (qaoa, samp)
+
+# baselines.py: small-instance simulation settings.
+baselines:
+  optimizer_max_iter: 40         # SPSA iteration cap (hybrid)
+  optimizer_max_iter_quick: 15
+  estimator_precision: 0.03      # VQE: shots per group = ceil(1/precision^2)
+  sampler_shots: 512             # QAOA shots per evaluation
+  seed: 7

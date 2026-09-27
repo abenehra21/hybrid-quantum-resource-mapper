@@ -1,0 +1,17 @@
+# QPU specs. eplg = error per layered gate; throughput = circuit layer ops (shots) per second.
+heron_r3:
+  qubits: 156
+  eplg: 2.15e-3
+  throughput_per_s: 4000
+  transpile_target:
+    fake_backend: FakeFez
+
+nighthawk_r2:
+  qubits: 120
+  eplg: 3.0e-3
+  throughput_per_s: 100000
+  # TOPOLOGY PROXY: a 10x12 square grid stands in for the Nighthawk lattice
+  # until a fake backend exists. Not a calibrated device model.
+  transpile_target:
+    grid: [10, 12]
+    basis: [cz, rz, sx, x]

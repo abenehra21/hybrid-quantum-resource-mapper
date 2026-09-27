@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hybrid-quantum-resource-mapper"
+version = "0.1.0"
+description = "Phase 1: rule-based task profiling and classical/hybrid/redesign resource mapping"
+requires-python = ">=3.11"
+dependencies = [
+    "qiskit>=2,<3",
+    "qiskit-ibm-runtime",  # fake backends only
+    "qiskit-aer",
+    "networkx",
+    "numpy",
+    "pandas",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools]
+packages = ["hybrid_mapper"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
