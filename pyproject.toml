@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hybrid-quantum-resource-mapper"
-version = "0.1.0"
-description = "Phase 1: rule-based task profiling and classical/hybrid/redesign resource mapping"
+version = "0.2.0"
+description = "Task profiling and classical/hybrid/redesign resource mapping for hybrid quantum-classical computing"
 requires-python = ">=3.11"
 dependencies = [
     "qiskit>=2,<3",
@@ -15,6 +15,7 @@ dependencies = [
     "numpy",
     "pandas",
     "pyyaml",
+    "scikit-learn",  # Phase 2 resource models
 ]
 
 [project.optional-dependencies]
