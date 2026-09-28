@@ -21,6 +21,7 @@ class TaskProfile:
     depth: int = 0
     two_qubit_gates: int = 0
     sum_abs_coeffs: float = 0.0
+    measurement_groups: int = 0  # qubit-wise-commuting Pauli groups; 0 = unknown / not applicable
     samples_needed: int = 0
     # Hardware-level
     target_qpu: str = "heron_r3"

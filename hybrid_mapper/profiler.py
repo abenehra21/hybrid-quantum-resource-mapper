@@ -33,6 +33,7 @@ def profile(workload: Workload, backend: str = "heron_r3", **overrides) -> TaskP
         depth=isa.depth(),
         two_qubit_gates=two_qubit_count(isa),
         sum_abs_coeffs=float(sum(abs(ham.coeffs))) if ham is not None else 0.0,
+        measurement_groups=len(ham.group_commuting(qubit_wise=True)) if ham is not None else 0,
         samples_needed=int(defaults["samples_needed"]) if KIND[workload.algorithm] == "sample" else 0,
         target_qpu=backend,
         eplg=float(spec["eplg"]),

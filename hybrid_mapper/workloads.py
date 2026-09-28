@@ -19,13 +19,20 @@ class Workload:
     graph: nx.Graph | None = None
 
 
-def synthetic_hamiltonian(n_qubits: int, n_terms: int | None = None, seed: int = 0) -> SparsePauliOp:
-    """Seeded random Pauli sum standing in for a molecular Hamiltonian. Not physical."""
+def synthetic_hamiltonian(n_qubits: int, n_terms: int | None = None, seed: int = 0, max_weight: int = 2) -> SparsePauliOp:
+    """Seeded random Pauli sum standing in for a molecular Hamiltonian. Not physical data.
+
+    Terms act on at most max_weight random qubits (bounded-weight, like physical spin and
+    chemistry-inspired models); full-weight random strings give an unrealistically rugged landscape.
+    """
     rng = np.random.default_rng(seed)
     n_terms = n_terms or 4 * n_qubits
-    paulis = ["".join(rng.choice(list("IXYZ"), n_qubits)) for _ in range(n_terms)]
-    coeffs = rng.normal(0, 1, n_terms)
-    return SparsePauliOp(paulis, coeffs).simplify()
+    terms = []
+    for _ in range(n_terms):
+        weight = int(rng.integers(1, min(max_weight, n_qubits) + 1))
+        qubits = rng.choice(n_qubits, weight, replace=False).tolist()
+        terms.append(("".join(rng.choice(list("XYZ"), weight)), qubits, rng.normal()))
+    return SparsePauliOp.from_sparse_list(terms, n_qubits).simplify()
 
 
 def maxcut_hamiltonian(graph: nx.Graph) -> SparsePauliOp:
@@ -41,9 +48,11 @@ def maxcut(n_nodes: int, p: int = 1, seed: int = 0) -> Workload:
     return Workload(f"maxcut{n_nodes}_p{p}", "opt", "qaoa", circ, hamiltonian=ham, graph=graph)
 
 
-def vqe(n_qubits: int, reps: int = 1, seed: int = 0) -> Workload:
+def vqe(n_qubits: int, reps: int = 1, seed: int = 0, entanglement: str = "reverse_linear") -> Workload:
     ham = synthetic_hamiltonian(n_qubits, seed=seed)
-    return Workload(f"synthetic_vqe{n_qubits}_r{reps}", "chem", "vqe", efficient_su2(n_qubits, reps=reps), hamiltonian=ham)
+    circ = efficient_su2(n_qubits, reps=reps, entanglement=entanglement)
+    suffix = "" if entanglement == "reverse_linear" else f"_{entanglement}"
+    return Workload(f"synthetic_vqe{n_qubits}_r{reps}{suffix}", "chem", "vqe", circ, hamiltonian=ham)
 
 
 def random_workload(n_qubits: int, depth: int = 10, seed: int = 0) -> Workload:

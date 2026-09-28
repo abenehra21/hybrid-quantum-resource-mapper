@@ -20,8 +20,27 @@ workload_defaults:
 
 # baselines.py: small-instance simulation settings.
 baselines:
-  optimizer_max_iter: 40         # SPSA iteration cap (hybrid)
-  optimizer_max_iter_quick: 15
-  estimator_precision: 0.03      # VQE: shots per group = ceil(1/precision^2)
+  vqe_reps: 1                    # efficient-SU2 layers for the hybrid VQE runs
+  optimizer_max_iter: 100        # SPSA iteration cap (hybrid)
+  optimizer_max_iter_quick: 40
+  spsa_calibration_steps: 5      # gradient samples used to set the SPSA learning rate
+  spsa_target_step: 0.6          # calibrated size (rad) of the first parameter update
+  spsa_perturbation: 0.2          # SPSA finite-difference step; must beat shot noise
+  estimator_precision: 0.05      # VQE: shots per measurement group = ceil(1/precision^2)
   sampler_shots: 512             # QAOA shots per evaluation
+  success_rel_error: 0.05        # a run "succeeds" if |result - exact| <= 5% of |exact|
   seed: 7
+
+# Energy attribution (report.py / baselines.py). ASSUMED placeholder figures: replace with
+# measured values for your site. QPU power is attributed by share of QPU time, because the
+# cryostat and control electronics draw power whether or not a job is running.
+energy:
+  classical_node_watts: 300
+  qpu_system_watts: 25000
+
+# Oracle cost J = w_time*projected_runtime_s + w_energy*energy_j + w_qpu*qpu_seconds,
+# minimised over the strategies that meet the accuracy target.
+oracle_weights:
+  w_time: 1.0
+  w_energy: 0.001
+  w_qpu: 10.0
