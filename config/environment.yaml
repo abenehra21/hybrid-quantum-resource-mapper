@@ -1,0 +1,43 @@
+# Phase 3 ground-truth execution model ("the world").
+#
+# The Phase 1 rules never read this file. It stands in for real execution feedback until Phase 5
+# (QPU integration): it decides what *would actually happen* if a task ran classically or as a
+# hybrid workflow, using effects the rules ignore. The AI allocator only ever sees its outcomes as
+# training labels. Every number is a stated assumption or a calibration snapshot; change them to
+# test how robust the conclusions are.
+
+classical:
+  node_memory_gib: 512           # one HPC node; the rules' R2 line assumes a 16 GiB workstation
+  node_watts: 1000               # assumed node power draw
+  job_overhead_s: 1.0            # launch + I/O cost added to every classical method
+  memory_bandwidth_gbs: 200      # statevector simulation streams the full 2^n vector per gate
+  flops: 1.0e+13                 # dense tensor-contraction throughput of one GPU-class node
+  mps_max_bond: 4096             # largest exact MPS bond dimension allowed (memory ~ n*chi^2*16 B)
+  maxcut_heuristic_ratio: 0.878  # Goemans-Williamson approximation guarantee (1995)
+
+quantum:
+  # Median readout error of the FakeFez calibration snapshot (qiskit-ibm-runtime). Nighthawk has no
+  # fake backend, so the same value is assumed. Expectation-value workflows remove readout bias with
+  # twirled readout mitigation (van den Berg et al. 2022), so it is applied to sampling tasks only.
+  readout_error: {heron_r3: 0.0076, nighthawk_r2: 0.0076}
+  good_samples_required: 1000    # error-free bitstrings a sampling task needs (shots = max(N, G/F))
+  # Worst-case QAOA approximation ratios on 3-regular graphs: p=1 Farhi et al. 2014;
+  # p=2 Wurtz & Love 2021; p=3 Wurtz & Love 2021, conditional on their cycle conjecture.
+  qaoa_ratio: {1: 0.6924, 2: 0.7559, 3: 0.7924}
+  mitigation_floor_fidelity: 1.0e-3  # below this, expectation-value mitigation is not trusted
+  queue_lognormal_sigma: 0.6     # realised queue wait = nominal * lognormal(0, sigma)
+  qpu_system_watts: 25000        # same assumption as rules.yaml, attributed by QPU-time share
+
+# Phase 3 tasks: each transpiled workload in data/resources.csv is paired with several sampled
+# operating conditions (precision, deadline, queue, budget ...), so the same circuit appears under
+# easy and hard conditions.
+scenarios:
+  per_workload: 4
+  precision_target: [1.6e-3, 1.0e-2, 5.0e-2]   # expectation-value tasks (1.6e-3 = chemical accuracy)
+  maxcut_ratio_target: [0.75, 0.85, 0.9]
+  deadline_min: [30, 120, 480, 1440]
+  queue_wait_min: [5, 30, 120, 480]             # nominal value the allocator sees
+  shot_budget: [1.0e+6, 1.0e+7, 1.0e+8]
+  samples_needed: [1.0e+4, 1.0e+5, 1.0e+6]      # sampling tasks
+  failure_penalty_s: 3600        # regret for a decision that yields no accepted result (failed run or wrong decline)
+  seed: 11

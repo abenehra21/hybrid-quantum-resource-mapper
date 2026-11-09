@@ -10,13 +10,13 @@ The AI hybrid column arrives in Phase 3.
 
 | Metric | Classical-only | Hybrid (always) | Rule-based mapper | Oracle |
 |---|---|---|---|---|
-| Runtime, projected (s) | 0.00487 | 54.7 | 0.00487 | 0.00487 |
-| Energy, estimated (J) | 1.46 | 1.37e+06 | 1.46 | 1.46 |
-| Accuracy (mean relative error) | 0 | 0.106 | 0 | 0 |
-| QPU time, estimated (s) | 0 | 54.6 | 0 | 0 |
-| Number of shots | 0 | 2.18e+05 | 0 | 0 |
+| Runtime, projected (s) | 0.0049 | 45.6 | 0.0049 | 0.0049 |
+| Energy, estimated (J) | 1.47 | 1.14e+06 | 1.47 | 1.47 |
+| Accuracy (mean relative error) | 0 | 0.13 | 0 | 0 |
+| QPU time, estimated (s) | 0 | 45.6 | 0 | 0 |
+| Number of shots | 0 | 1.82e+05 | 0 | 0 |
 | Success rate | 1 | 0.571 | 1 | 1 |
-| Communication overhead (QPU round trips) | 0 | 106 | 0 | 0 |
+| Communication overhead (QPU round trips) | 0 | 88.9 | 0 | 0 |
 
 ## Per-workload decisions
 
@@ -29,7 +29,7 @@ Oracle = cheapest strategy (cost J from `oracle_weights`) among those meeting th
 | maxcut8_p1 | CLASSICAL (R2) | classical | True | 0 | 0 |
 | maxcut10_p1 | CLASSICAL (R2) | classical | True | 0 | 0 |
 | maxcut12_p1 | CLASSICAL (R2) | classical | True | 0 | 0 |
-| synthetic_vqe4_r1 | CLASSICAL (R2) | classical | True | 0 | 0.0773 |
+| synthetic_vqe4_r1 | CLASSICAL (R2) | classical | True | 0 | 0.248 |
 | synthetic_vqe6_r1 | CLASSICAL (R2) | classical | True | 0 | 0.293 |
 | synthetic_vqe8_r1 | CLASSICAL (R2) | classical | True | 0 | 0.368 |
 

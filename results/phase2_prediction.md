@@ -33,12 +33,12 @@ Predicted circuit fields fed into the unchanged Phase 1 rules, compared with dec
 
 | split | model | n_test | decision agreement | fired-rule agreement | median |log10 F error| | predict+decide ms/task | exact transpile ms/task |
 |---|---|---|---|---|---|---|---|
-| interpolation (random 25% held out) | analytic | 152 | 0.888 | 0.875 | 0.0981 | 1.86 | 1.53e+03 |
-| interpolation (random 25% held out) | power-law | 152 | 0.987 | 0.987 | 0.0225 | 1.88 | 1.53e+03 |
-| interpolation (random 25% held out) | gbt | 152 | 0.987 | 0.987 | 0.0215 | 1.88 | 1.53e+03 |
-| extrapolation (train n<=40, test n>40) | analytic | 288 | 0.691 | 0.684 | 0.788 | 1.78 | 2.46e+03 |
-| extrapolation (train n<=40, test n>40) | power-law | 288 | 0.958 | 0.951 | 0.136 | 1.86 | 2.46e+03 |
-| extrapolation (train n<=40, test n>40) | gbt | 288 | 0.899 | 0.885 | 0.272 | 1.82 | 2.46e+03 |
+| interpolation (random 25% held out) | analytic | 152 | 0.888 | 0.875 | 0.0981 | 1.74 | 1.53e+03 |
+| interpolation (random 25% held out) | power-law | 152 | 0.987 | 0.987 | 0.0225 | 1.83 | 1.53e+03 |
+| interpolation (random 25% held out) | gbt | 152 | 0.987 | 0.987 | 0.0215 | 1.82 | 1.53e+03 |
+| extrapolation (train n<=40, test n>40) | analytic | 288 | 0.691 | 0.684 | 0.788 | 1.72 | 2.46e+03 |
+| extrapolation (train n<=40, test n>40) | power-law | 288 | 0.958 | 0.951 | 0.136 | 1.8 | 2.46e+03 |
+| extrapolation (train n<=40, test n>40) | gbt | 288 | 0.899 | 0.885 | 0.272 | 1.78 | 2.46e+03 |
 
 ## Execution-outcome models (runtime, energy, error)
 
@@ -46,6 +46,6 @@ Leave-one-out fits on the hybrid runs in `logs/decisions.csv`. These labels need
 
 | target | n_runs | LOO MAE power-law | LOO MAE mean-baseline |
 |---|---|---|---|
-| projected_runtime_s | 7 | 11.7 | 36.8 |
-| energy_j_est | 7 | 2.92e+05 | 9.2e+05 |
-| rel_error | 7 | 0.101 | 0.15 |
+| projected_runtime_s | 9 | 20 | 32.7 |
+| energy_j_est | 9 | 5.03e+05 | 8.18e+05 |
+| rel_error | 9 | 0.0714 | 0.145 |

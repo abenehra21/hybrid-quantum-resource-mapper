@@ -14,7 +14,7 @@ the task cannot work as posed. Every decision comes with a trace explaining why.
 |---|---|---|
 | 1 · Rule-based prototype | Transparent decision rules, baseline runs, Phase 2 dataset | ✅ this repo |
 | 2 · Resource prediction | ML models predict gate count, depth, shots, runtime, energy, error | ✅ this repo |
-| 3 · AI task allocation | Learned classifier replaces or augments the rules | planned |
+| 3 · AI task allocation | Learned allocator replaces or augments the rules | ✅ this repo (simulation study) |
 | 4 · Automatic partitioning | Split applications into classical/quantum subtasks (task DAG) | planned |
 | 5 · QPU integration | Run selected workloads on real hardware, collect feedback | planned |
 | 6 · Federated learning | Aggregate model updates across sites without sharing raw data | planned |
@@ -46,11 +46,19 @@ python3.11 -m venv .venv && .venv/bin/pip install -e ".[test]"
 # Phase 2
 .venv/bin/python -m hybrid_mapper predict --workload maxcut --size 80 --reps 2 --backend nighthawk_r2 --compare
 .venv/bin/python -m hybrid_mapper dataset                              # regenerate data/resources.csv (~15 min)
-.venv/bin/python -m hybrid_mapper report                               # write results/*.md
+
+# Phase 3
+.venv/bin/python -m hybrid_mapper allocate --workload vqe --size 100 --reps 2 --compare   # rules vs AI vs truth
+.venv/bin/python -m hybrid_mapper tasks                                # regenerate data/tasks.csv (~10 s)
+
+.venv/bin/python -m hybrid_mapper demo                                 # guided walkthrough of all 3 phases (~20 s)
+.venv/bin/python -m hybrid_mapper report                               # write results/*.md (~1 min)
 ```
 
 Common workload flags: `--workload {maxcut,vqe,random}`, `--size`, `--backend {heron_r3,nighthawk_r2}`,
 `--reps` (QAOA p / ansatz layers / random-circuit depth), `--entanglement` (VQE ansatz), `--seed`.
+`allocate` adds operating conditions: `--precision`, `--target-ratio`, `--deadline`, `--queue`, `--budget`,
+`--samples`.
 
 ---
 
@@ -227,6 +235,59 @@ comes from routing overhead that the analytic formula (2·p·|E| = 480 gates on 
 
 ---
 
+## Phase 3: AI task allocation
+
+The proposal: *use ML predictions to replace or augment fixed resource-mapping decisions*. Judging any
+allocator requires knowing the right answer for tasks too large to simulate, and that needs real execution
+feedback (Phase 5). Until then Phase 3 is a **simulation study**. `environment.py` is a ground-truth model of
+what would actually happen, built from effects the Phase 1 rules ignore, each taken from the literature:
+
+| Effect | What the rules assume | What the ground truth knows |
+|---|---|---|
+| Tensor networks (Vidal 2003) | > 30 qubits cannot be simulated | weakly entangled circuits run exactly as an MPS at any width (bond dimension ≤ 2^ebits across the worst cut) |
+| Classical heuristics (Goemans–Williamson 1995) | `classical_meets_target` is a hand-set flag | 0.878 Max-Cut guarantee vs QAOA worst cases of 0.692 / 0.756 / 0.792 for p = 1/2/3 (Farhi 2014; Wurtz & Love 2021) |
+| HPC node | 16 GiB workstation | 512 GiB node → statevector up to 35 qubits |
+| Readout error | ignored | (1 − 0.0076)^n on sampling tasks (FakeFez median) |
+| Shots-for-fidelity | hard F_min cut-off | a sampling task needs ~1,000 clean samples: shots = max(N, 1000/F) within budget |
+| Queue | known exactly | realised wait is log-normal around the nominal value |
+
+`tasks` pairs each of the 608 transpiled workloads with 4 sampled operating conditions (precision, ratio
+target, deadline, queue, shot budget, samples) → 2,432 labelled tasks: CLASSICAL 68%, REDESIGN 21%,
+HYBRID 11%. Allocators see only pre-execution information: problem-level features, conditions and **Phase 2
+predicted** circuit fields. The hidden quantities reach them only through the labels.
+
+**Results** on 30% of workloads never seen in training
+([`results/phase3_allocation.md`](results/phase3_allocation.md) has everything):
+
+| | Classical-only | Quantum-only | Rules (Phase 1) | Rules, tuned thresholds | **AI: decision tree** | **AI: gradient boosting** |
+|---|---|---|---|---|---|---|
+| Decision accuracy vs oracle | 67% | 13% | 55% | 58% | **97%** | **97%** |
+| Mean regret (cost units) | 1,176 | 75,746 | 2,855 | 2,460 | **285** | 420 |
+| Unnecessary QPU use | 0% | 67% | 6.0% | 3.6% | **0%** | **0%** |
+
+- **Replace beats augment.** Feeding the rules Phase 2 predictions (55%) or tuning their thresholds (58%)
+  barely helps, because no threshold can say "weakly entangled circuits are classically easy". That needs
+  features the rules don't have. 140 of the rules' 336 mistakes are exactly that case.
+- **The tree is interpretable.** `allocate` prints the path a task takes through it, and the report prints the
+  whole tree as if-then rules, ready to compare side by side with R1–R9.
+- **Honest failure mode: extrapolation.** Trained only on ≤ 40 qubits, the AI is still far more accurate on
+  larger tasks (86% vs 33%). But its errors there are expensive (QPU jobs that blow the shot budget), so its
+  regret (5,816) is worse than always choosing classical (1,613).
+- **Feedback fixes it (Function 6).** Feeding back 10% of the large workloads cuts gradient-boosting regret to
+  2,270. At 30% it reaches **397**, beating both classical-only and the static rules (5,340), which cannot
+  learn at all. This is the proposal's research hypothesis, shown in simulation.
+
+```
+$ python -m hybrid_mapper allocate --workload vqe --size 100 --reps 2 --compare
+Phase 1 rules (on predicted fields):  REDESIGN via R7: shots 2e+09 > budget 1e+07
+Phase 3 AI (gradient boosting):       CLASSICAL  P(CLASSICAL)=1.00
+GROUND TRUTH (... entanglement bound 2 ebits ...)
+  classical: feasible  (mps in 1 s)
+  oracle:    CLASSICAL
+```
+
+---
+
 ## Repository layout
 
 ```
@@ -241,10 +302,13 @@ hybrid_mapper/
   baselines.py   classical vs hybrid runs -> logs/decisions.csv
   dataset.py     Phase 2 sweep -> data/resources.csv
   predict.py     Phase 2 models, evaluation, predicted profiles
-  report.py      results/phase1_baselines.md, results/phase2_prediction.md
-  cli.py         python -m hybrid_mapper {decide,profile,baselines,dataset,predict,report}
-config/          backends.yaml, rules.yaml (every threshold, weight and assumption)
-data/            resources.csv (Phase 2 training data)
+  environment.py Phase 3 ground-truth execution model (never read by the rules)
+  allocate.py    Phase 3 tasks, allocators (tuned rules, decision tree, boosting), evaluation
+  demo.py        guided walkthrough of all three phases
+  report.py      results/phase{1,2,3}_*.md
+  cli.py         python -m hybrid_mapper {decide,profile,baselines,dataset,predict,tasks,allocate,demo,report}
+config/          backends.yaml, rules.yaml (rule thresholds), environment.yaml (ground-truth assumptions)
+data/            resources.csv (Phase 2 training data), tasks.csv (Phase 3 labelled tasks)
 results/         generated reports
 tests/           pytest suite (presets, config-driven thresholds, formulas, models)
 ```
@@ -267,3 +331,8 @@ tests/           pytest suite (presets, config-driven thresholds, formulas, mode
   prints n next to every number. Transpiler-labelled resources (608 rows) are the solid part of Phase 2.
 - **Prediction scope.** Predictors cover the three workload families in the sweep. A new family needs new
   training rows.
+- **Phase 3 is a simulation study.** Its labels come from a ground-truth *model* whose effects come from the
+  literature, so the AI is shown to recover those effects from pre-execution features, not to beat real
+  hardware. The same pipeline retrains unchanged on real execution feedback once Phase 5 exists.
+- **Worst-case vs typical.** The ground truth compares worst-case guarantees on both sides (GW 0.878 vs QAOA
+  bounds). Typical-instance performance of both is better, and the p = 3 bound is conditional on a conjecture.

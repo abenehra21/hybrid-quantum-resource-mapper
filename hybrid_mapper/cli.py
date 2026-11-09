@@ -1,4 +1,4 @@
-"""python -m hybrid_mapper {decide,profile,baselines,dataset,predict,report}"""
+"""python -m hybrid_mapper {decide,profile,baselines,dataset,predict,tasks,allocate,demo,report}"""
 import argparse
 
 from hybrid_mapper.backends import load_backends
@@ -31,6 +31,21 @@ def add_workload_args(p) -> None:
     p.add_argument("--entanglement", default="reverse_linear", choices=["reverse_linear", "circular", "full"],
                    help="VQE ansatz entanglement")
     p.add_argument("--seed", type=int, default=0)
+
+
+def add_condition_args(p) -> None:
+    p.add_argument("--precision", type=float, default=1e-2, help="expectation-value precision target")
+    p.add_argument("--target-ratio", type=float, default=0.85, help="Max-Cut approximation-ratio target")
+    p.add_argument("--deadline", type=float, default=480, help="minutes")
+    p.add_argument("--queue", type=float, default=30, help="nominal QPU queue wait, minutes")
+    p.add_argument("--budget", type=float, default=1e7, help="shot budget")
+    p.add_argument("--samples", type=float, default=1e5, help="samples needed (sampling tasks)")
+
+
+def conditions(args) -> dict:
+    return {"precision_target": args.precision, "maxcut_ratio_target": args.target_ratio,
+            "deadline_min": args.deadline, "queue_wait_min": args.queue, "shot_budget": args.budget,
+            "samples_needed": args.samples}
 
 
 def build_workload(args):
@@ -88,7 +103,14 @@ def main(argv=None) -> None:
     add_workload_args(p)
     p.add_argument("--model", default="power-law", choices=["analytic", "power-law", "gbt"])
     p.add_argument("--compare", action="store_true", help="also transpile and show the exact values")
-    sub.add_parser("report", help="write results/phase1_baselines.md and results/phase2_prediction.md")
+    sub.add_parser("tasks", help="Phase 3: pair workloads with operating conditions, label with the oracle")
+    a = sub.add_parser("allocate", help="Phase 3: rules vs AI allocation for one task (--compare: ground truth)")
+    add_workload_args(a)
+    add_condition_args(a)
+    a.add_argument("--compare", action="store_true", help="also transpile and ask the ground-truth oracle")
+    m = sub.add_parser("demo", help="guided walkthrough of Phases 1-3")
+    m.add_argument("--phase", type=int, choices=[1, 2, 3], help="run only one phase")
+    sub.add_parser("report", help="write results/phase{1,2,3}_*.md")
     args = ap.parse_args(argv)
 
     if args.cmd == "decide":
@@ -107,6 +129,19 @@ def main(argv=None) -> None:
         generate(quick=args.quick)
     elif args.cmd == "predict":
         predict_cmd(args)
+    elif args.cmd == "tasks":
+        from hybrid_mapper.allocate import build_tasks
+
+        build_tasks()
+    elif args.cmd == "allocate":
+        from hybrid_mapper.allocate import allocate_one
+
+        spec, _ = build_workload(args)
+        print(allocate_one(*spec, args.backend, conditions(args), args.compare))
+    elif args.cmd == "demo":
+        from hybrid_mapper.demo import run as demo
+
+        demo(args.phase)
     else:
         from hybrid_mapper.report import run
 

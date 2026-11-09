@@ -44,8 +44,9 @@ def derive(p: TaskProfile) -> dict:
     }
 
 
-def decide(p: TaskProfile, rules_path: Path = CONFIG_DIR / "rules.yaml") -> Decision:
-    cfg = load_rules(rules_path)
+def decide(p: TaskProfile, rules_path: Path = CONFIG_DIR / "rules.yaml", cfg: dict | None = None) -> Decision:
+    """cfg overrides rules_path with an already-loaded config (Phase 3 threshold tuning)."""
+    cfg = cfg or load_rules(rules_path)
     d = derive(p)
     mem_bytes = cfg["statevector_memory_gib"] * 2**30
     gib = d["statevector_bytes"] / 2**30
