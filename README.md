@@ -10,6 +10,9 @@ This project automates that decision. It profiles an incoming task (qubits, gate
 deadline) and routes it to **CLASSICAL** execution, a **HYBRID** quantum–classical workflow, or **REDESIGN** when
 the task cannot work as posed. Every decision comes with a trace explaining why.
 
+**Study module:** [`docs/handbook.html`](docs/handbook.html) explains every phase from first principles, with live
+calculators, demo walkthroughs and a professor Q&A bank (open it in a browser).
+
 | Phase | Goal | Status |
 |---|---|---|
 | 1 · Rule-based prototype | Transparent decision rules, baseline runs, Phase 2 dataset | ✅ this repo |
@@ -147,8 +150,8 @@ accuracy target) and reports the rule engine's decision accuracy and regret.
 
 | Metric (mean per workload) | Classical-only | Hybrid (always) | Rule-based mapper | Oracle |
 |---|---|---|---|---|
-| Runtime, projected (s) | 0.005 | 54.7 | 0.005 | 0.005 |
-| Energy, estimated (J) | 1.46 | 1.37e6 | 1.46 | 1.46 |
+| Runtime, projected (s) | < 0.01 | 54.7 | < 0.01 | < 0.01 |
+| Energy, estimated (J) | ≈ 1 | 1.37e6 | ≈ 1 | ≈ 1 |
 | Accuracy (mean relative error) | 0 | 0.106 | 0 | 0 |
 | QPU time, estimated (s) | 0 | 54.6 | 0 | 0 |
 | Number of shots | 0 | 2.18e5 | 0 | 0 |

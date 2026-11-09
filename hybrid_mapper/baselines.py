@@ -25,7 +25,7 @@ from hybrid_mapper.rules import decide, load_rules
 from hybrid_mapper.workloads import Workload, maxcut, vqe
 
 LOG_PATH = Path(__file__).resolve().parent.parent / "logs" / "decisions.csv"
-COLUMNS = ["timestamp", "workload", "strategy", *FIELD_NAMES, "decision", "fired_rule",
+COLUMNS = ["timestamp", "run_id", "mode", "workload", "strategy", *FIELD_NAMES, "decision", "fired_rule",
            "runtime_s", "projected_runtime_s", "qpu_seconds_est", "qpu_calls", "energy_j_est", "shots",
            "result", "exact", "error", "success"]
 MAX_QUBITS, MAX_NODES = 12, 20
@@ -149,6 +149,7 @@ def run(quick: bool = False, log_path: Path = LOG_PATH) -> list[dict]:
     throughput = get_backend(BACKEND)["throughput_per_s"]
     sim = AerSimulator.from_backend(FakeFez())
     rng = np.random.default_rng(cfg["seed"])
+    run_id, mode = datetime.now(timezone.utc).isoformat(timespec="seconds"), "quick" if quick else "full"
     rows = []
     for w in workloads(quick, cfg["vqe_reps"]):
         prof = profile(w, BACKEND)
@@ -172,7 +173,8 @@ def run(quick: bool = False, log_path: Path = LOG_PATH) -> list[dict]:
 
         for strategy, o in outcomes.items():
             error = abs(o["result"] - exact)
-            row = {"timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"), "workload": w.name,
+            row = {"timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"), "run_id": run_id,
+                   "mode": mode, "workload": w.name,
                    "strategy": strategy, **prof.to_dict(), "decision": dec.decision, "fired_rule": dec.fired_rule,
                    **{k: round(v, 4) if isinstance(v, float) else v for k, v in o.items()},
                    "exact": exact, "error": error, "success": error <= cfg["success_rel_error"] * abs(exact)}

@@ -1,0 +1,1289 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Resource Mapper Handbook</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a lab handbook. Sticky contents rail on the left, one reading column, instruments (calculators,
+   traces, charts) set into the column as bordered panels. Colour encodes the four routes everywhere. */
+:root{
+  --bg:#F2F5F8; --surface:#FFFFFF; --surface2:#E7ECF2; --ink:#121B26; --muted:#465365; --faint:#738096;
+  --line:#D2D9E3; --accent:#1C58C4; --accent-soft:rgba(28,88,196,.09);
+  --classical:#A35A08; --classical-soft:rgba(163,90,8,.10);
+  --hybrid:#11775A; --hybrid-soft:rgba(17,119,90,.10);
+  --redesign:#B23535; --redesign-soft:rgba(178,53,53,.09);
+  --code-bg:#EBEFF5; --code-ink:#1A2533;
+  --display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --body:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C121A; --surface:#131B26; --surface2:#1A2432; --ink:#E2E8F0; --muted:#A4B0C0; --faint:#718095;
+  --line:#253143; --accent:#7EA7F5; --accent-soft:rgba(126,167,245,.12);
+  --classical:#E3A35E; --classical-soft:rgba(227,163,94,.13);
+  --hybrid:#5ACBA2; --hybrid-soft:rgba(90,203,162,.12);
+  --redesign:#EF8A84; --redesign-soft:rgba(239,138,132,.12);
+  --code-bg:#0A1017; --code-ink:#D5DEEA; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C121A; --surface:#131B26; --surface2:#1A2432; --ink:#E2E8F0; --muted:#A4B0C0; --faint:#718095;
+  --line:#253143; --accent:#7EA7F5; --accent-soft:rgba(126,167,245,.12);
+  --classical:#E3A35E; --classical-soft:rgba(227,163,94,.13);
+  --hybrid:#5ACBA2; --hybrid-soft:rgba(90,203,162,.12);
+  --redesign:#EF8A84; --redesign-soft:rgba(239,138,132,.12);
+  --code-bg:#0A1017; --code-ink:#D5DEEA; color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:20px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.62;margin:0}
+a{color:var(--accent);text-underline-offset:3px;text-decoration-thickness:1px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+.shell{display:grid;grid-template-columns:272px minmax(0,1fr);min-height:100vh}
+nav.rail{position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow-y:auto;border-right:1px solid var(--line);
+  background:var(--surface);padding:26px 18px 40px max(18px,env(safe-area-inset-left,0px));font-family:var(--display)}
+.brand{font-weight:800;font-stretch:80%;font-size:1.32rem;line-height:1.1;letter-spacing:.005em;margin:0 0 4px}
+.brand-sub{font-family:var(--body);font-size:.84rem;color:var(--muted);margin:0 0 18px}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 0 20px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.7rem;letter-spacing:.04em;
+  padding:3px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.c-classical{color:var(--classical);background:var(--classical-soft)}
+.c-hybrid{color:var(--hybrid);background:var(--hybrid-soft)}
+.c-redesign{color:var(--redesign);background:var(--redesign-soft)}
+.c-quantum{color:var(--accent);background:var(--accent-soft)}
+.rail h4{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:18px 0 6px;font-weight:700}
+.rail ol{list-style:none;margin:0;padding:0}
+.rail li a{display:block;padding:4px 8px;margin:0 -8px;border-radius:5px;color:var(--muted);text-decoration:none;
+  font-size:.9rem;font-stretch:92%;font-weight:500}
+.rail li a:hover{background:var(--surface2);color:var(--ink)}
+.rail li a.on{color:var(--accent);background:var(--accent-soft)}
+main{min-width:0;padding-block:40px 120px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.col{max-width:780px;margin:0 auto}
+header.hero{max-width:780px;margin:0 auto 34px;padding-bottom:26px;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--display);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:700;margin:0 0 10px}
+h1{font-family:var(--display);font-weight:800;font-stretch:78%;font-size:clamp(2.3rem,5vw,3.4rem);line-height:1.02;margin:0 0 14px;text-wrap:balance;letter-spacing:-.005em}
+.lede{font-size:1.12rem;color:var(--muted);margin:0 0 18px;max-width:64ch}
+.routes{display:flex;flex-wrap:wrap;gap:8px}
+section.part{margin:64px 0 0}
+.part-label{font-family:var(--display);font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:0 0 4px}
+h2{font-family:var(--display);font-weight:800;font-stretch:82%;font-size:2rem;line-height:1.08;margin:0 0 12px;text-wrap:balance}
+h3{font-family:var(--display);font-weight:700;font-stretch:90%;font-size:1.28rem;line-height:1.2;margin:36px 0 8px;text-wrap:balance}
+h4.sub{font-family:var(--display);font-weight:700;font-size:1rem;margin:22px 0 4px}
+p{margin:0 0 14px}
+.col>section>p,.col p{max-width:68ch}
+ul,ol{padding-left:1.3em;margin:0 0 14px}
+li{margin:0 0 5px}
+strong{font-weight:600}
+code{font-family:var(--mono);font-size:.84em;background:var(--code-bg);color:var(--code-ink);padding:.06em .36em;border-radius:4px}
+pre{font-family:var(--mono);font-size:.78rem;line-height:1.55;background:var(--code-bg);color:var(--code-ink);border:1px solid var(--line);
+  border-radius:8px;padding:14px 16px;overflow-x:auto;margin:0 0 16px;white-space:pre}
+pre .k{color:var(--accent)} pre .ok{color:var(--hybrid)} pre .bad{color:var(--redesign)} pre .cl{color:var(--classical)} pre .dim{color:var(--faint)}
+.eq{font-family:var(--mono);font-size:.92rem;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 16px;
+  margin:0 0 16px;overflow-x:auto;white-space:nowrap}
+.tbl{overflow-x:auto;margin:0 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
+th,td{padding:8px 11px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--display);font-weight:700;font-size:.78rem;letter-spacing:.03em;color:var(--muted);background:var(--surface2)}
+tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:right;font-family:var(--mono);font-size:.8rem}
+td.best{color:var(--hybrid);font-weight:600}
+.note{border-left:3px solid var(--line);padding:10px 14px;margin:0 0 16px;background:var(--surface);border-radius:0 8px 8px 0}
+.note.say{border-left-color:var(--accent)}
+.note.ask{border-left-color:var(--classical)}
+.note.warn{border-left-color:var(--redesign)}
+.note.win{border-left-color:var(--hybrid)}
+.note .tag{display:block;font-family:var(--display);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:4px;color:var(--faint)}
+.note.say .tag{color:var(--accent)} .note.ask .tag{color:var(--classical)} .note.warn .tag{color:var(--redesign)} .note.win .tag{color:var(--hybrid)}
+.note p:last-child{margin-bottom:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;margin:6px 0 22px}
+.panel-title{font-family:var(--display);font-weight:700;font-size:1rem;margin:0 0 2px}
+.panel-sub{font-size:.86rem;color:var(--muted);margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 14px}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field label{font-family:var(--display);font-size:.74rem;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.field input,.field select{font-family:var(--mono);font-size:.84rem;padding:6px 8px;border:1px solid var(--line);border-radius:6px;
+  background:var(--bg);color:var(--ink);width:100%;min-width:0}
+.check{display:flex;align-items:center;gap:7px;font-size:.86rem;color:var(--muted)}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+button.pre{font-family:var(--display);font-size:.78rem;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--line);
+  background:var(--surface2);color:var(--ink);cursor:pointer}
+button.pre:hover{border-color:var(--accent);color:var(--accent)}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:14px 0 0}
+.stat{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 11px;min-width:0}
+.stat .l{font-family:var(--display);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.stat .v{font-family:var(--mono);font-size:1rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.verdict{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 8px;font-family:var(--display);font-weight:700}
+.verdict .big{font-size:1.25rem;padding:4px 12px;border-radius:7px;border:1.5px solid currentColor}
+.trace{font-family:var(--mono);font-size:.78rem;background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:pre}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.side{border:1px solid var(--line);border-radius:8px;padding:11px 12px;background:var(--bg);min-width:0}
+.side h5{margin:0 0 4px;font-family:var(--display);font-size:.86rem}
+.side p{margin:0;font-size:.88rem}
+details.qa{border:1px solid var(--line);border-radius:8px;background:var(--surface);margin:0 0 8px}
+details.qa summary{cursor:pointer;padding:10px 14px;font-family:var(--display);font-weight:600;font-size:.96rem;list-style:none}
+details.qa summary::-webkit-details-marker{display:none}
+details.qa summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent);font-family:var(--mono)}
+details.qa[open] summary::before{content:"−"}
+details.qa .a{padding:0 16px 12px 34px;font-size:.95rem}
+details.qa .a p:last-child{margin-bottom:0}
+.chart{width:100%;overflow-x:auto}
+.chart svg{display:block;max-width:100%;height:auto}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:.92rem;margin:0 0 16px}
+.kv dt{font-family:var(--mono);font-size:.8rem;color:var(--accent)}
+.kv dd{margin:0}
+.refs li{font-size:.9rem;margin-bottom:8px}
+.gloss{display:grid;grid-template-columns:minmax(120px,max-content) 1fr;gap:6px 16px;font-size:.92rem}
+.gloss dt{font-family:var(--display);font-weight:700}
+.gloss dd{margin:0;color:var(--muted)}
+.cmd{font-family:var(--mono);font-size:.8rem}
+.toc-toggle{display:none}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  nav.rail{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line);padding:18px max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px))}
+  .rail-body{display:none}
+  .rail.open .rail-body{display:block}
+  .toc-toggle{display:inline-block;margin-top:6px}
+  .two{grid-template-columns:1fr}
+  body{font-size:16px}
+}
+</style>
+
+<div class="shell">
+<nav class="rail" id="rail" aria-label="Contents">
+  <p class="brand">Resource Mapper Handbook</p>
+  <p class="brand-sub">AI-driven task analysis for hybrid quantum–classical computing. Phases 1–3, from first principles.</p>
+  <div class="legend">
+    <span class="chip c-classical">CLASSICAL</span><span class="chip c-hybrid">HYBRID</span>
+    <span class="chip c-redesign">REDESIGN</span><span class="chip c-quantum">QPU</span>
+  </div>
+  <button class="pre toc-toggle" id="tocToggle" aria-expanded="false" aria-controls="railBody">Show contents</button>
+  <div class="rail-body" id="railBody">
+  <h4>Orientation</h4>
+  <ol>
+    <li><a href="#pitch">The 90-second pitch</a></li>
+    <li><a href="#proposal">The proposal, decoded</a></li>
+    <li><a href="#run">Running the demos</a></li>
+  </ol>
+  <h4>Foundations</h4>
+  <ol>
+    <li><a href="#hpc">Classical HPC</a></li>
+    <li><a href="#qubits">Qubits, circuits, shots</a></li>
+    <li><a href="#hardware">Today's IBM hardware</a></li>
+    <li><a href="#transpile">Transpilation and routing</a></li>
+    <li><a href="#noise">Noise, fidelity, mitigation</a></li>
+    <li><a href="#sim">Simulating circuits classically</a></li>
+    <li><a href="#algos">Hybrid algorithms</a></li>
+    <li><a href="#ml">The ML you need</a></li>
+    <li><a href="#qcsc">Quantum-centric supercomputing</a></li>
+  </ol>
+  <h4>Phase 1 · Rules</h4>
+  <ol>
+    <li><a href="#p1-profile">The Task Profile</a></li>
+    <li><a href="#p1-rules">Derived numbers and rules</a></li>
+    <li><a href="#p1-engine">Live rule engine</a></li>
+    <li><a href="#p1-code">Profiler and baselines</a></li>
+    <li><a href="#p1-demo">Phase 1 demo</a></li>
+  </ol>
+  <h4>Phase 2 · Prediction</h4>
+  <ol>
+    <li><a href="#p2-why">Why predict</a></li>
+    <li><a href="#p2-models">Data and models</a></li>
+    <li><a href="#p2-results">Results</a></li>
+    <li><a href="#p2-demo">Phase 2 demo</a></li>
+  </ol>
+  <h4>Phase 3 · Allocation</h4>
+  <ol>
+    <li><a href="#p3-what">What AI allocation means</a></li>
+    <li><a href="#p3-truth">The ground-truth model</a></li>
+    <li><a href="#p3-explorer">Ground-truth explorer</a></li>
+    <li><a href="#p3-learn">Allocators and metrics</a></li>
+    <li><a href="#p3-results">Results</a></li>
+    <li><a href="#p3-feedback">Extrapolation and feedback</a></li>
+    <li><a href="#p3-demo">Phase 3 demo</a></li>
+  </ol>
+  <h4>Defending it</h4>
+  <ol>
+    <li><a href="#talk">Talk plan</a></li>
+    <li><a href="#qa">Professor questions</a></li>
+    <li><a href="#limits">Limitations</a></li>
+    <li><a href="#next">Phases 4–6</a></li>
+    <li><a href="#glossary">Glossary</a></li>
+    <li><a href="#refs">References</a></li>
+  </ol>
+  </div>
+</nav>
+
+<main>
+<header class="hero">
+  <p class="eyebrow">Project handbook · repo <span class="cmd">hybrid-quantum-resource-mapper</span></p>
+  <h1>Deciding where each piece of a computation should run</h1>
+  <p class="lede">Everything you need to present Phases 1–3 and answer questions on them: the physics and computer science underneath, every formula with a worked example, what the code does line by line, the real results, live calculators, and the questions a professor is likely to ask.</p>
+  <div class="routes">
+    <span class="chip c-classical">CLASSICAL · run on CPU/GPU</span>
+    <span class="chip c-hybrid">HYBRID · QPU + HPC together</span>
+    <span class="chip c-redesign">REDESIGN · infeasible as posed</span>
+  </div>
+</header>
+
+<div class="col">
+
+<!-- ================================================================ ORIENTATION -->
+<section class="part" id="pitch">
+  <p class="part-label">Orientation</p>
+  <h2>The 90-second pitch</h2>
+  <div class="note say"><span class="tag">Say this</span>
+    <p>Quantum processors are good at a narrow set of hard sub-problems, but they are small, noisy and slow to access. Classical supercomputers handle everything else. Today, deciding which part of an application goes where is done by hand, by experts. We are building a framework that profiles an incoming task (how many qubits, how many two-qubit gates, how precise the answer must be, how noisy the hardware is, what the deadline is) and routes it: run it classically, run it as a hybrid quantum–classical workflow, or send it back for redesign because it cannot work as posed.</p>
+    <p>Phase 1 is a transparent rule engine: nine ordered checks, every threshold in a config file, every decision explained by the rule that fired. Phase 2 trains models that predict a circuit's cost (gate count, depth, measurement groups) in milliseconds, without building and transpiling it. Phase 3 trains an allocator on execution outcomes. In a simulation study it matches the correct decision on 97% of unseen workloads, against 55% for the fixed rules. When it faces larger problems than it was trained on, its mistakes get expensive, until a small amount of execution feedback fixes them.</p>
+  </div>
+  <p>Hold one picture in your head: a <strong>hospital triage desk</strong>. Most patients (computations) go to the general ward (classical HPC) because it is cheap, fast and reliable. A few need the specialist (the QPU), but only for one specific procedure, and the specialist has a long waiting list and a shaky hand. Triage decides who goes where, and most of the time it has to say no to the specialist. The proposal says this outright: the goal is "not to use quantum computing for every problem, but to identify when quantum execution is computationally meaningful."</p>
+</section>
+
+<section class="part" id="proposal">
+  <h2>The proposal, decoded</h2>
+  <p>Your proposal has 14 sections. This table maps each piece to what exists in the repository, so you can answer "where is that in your code?" without hesitating.</p>
+  <div class="tbl"><table>
+    <tr><th>Proposal item</th><th>What it asks</th><th>Where it lives</th></tr>
+    <tr><td>Central question</td><td>Can AI analyse a problem, partition it, and pick an efficient strategy under hardware, performance, energy and accuracy constraints?</td><td>Phases 1–3 answer the analyse-and-pick half; partitioning is Phase 4</td></tr>
+    <tr><td>RQ1 · hardware-independent characterisation</td><td>Describe a task without fixing the machine</td><td><code>profile.py</code>: problem-level fields; <code>dataset.problem_features</code></td></tr>
+    <tr><td>RQ2 · suitability</td><td>Classical, quantum or hybrid?</td><td><code>rules.py</code> (Phase 1), <code>allocate.py</code> (Phase 3)</td></tr>
+    <tr><td>RQ4 · estimate resources before execution</td><td>Qubits, depth, gates, measurement cost</td><td><code>predict.py</code> (Phase 2)</td></tr>
+    <tr><td>RQ5 · use execution feedback</td><td>Improve allocation from outcomes</td><td><code>allocate.feedback_curve</code> (Phase 3 result)</td></tr>
+    <tr><td>RQ7 · reduce time, energy, QPU use</td><td>Without losing accuracy</td><td>Metric tables in <code>results/phase1_baselines.md</code> and <code>phase3_allocation.md</code></td></tr>
+    <tr><td>F1 · characterisation</td><td>Task Profile</td><td><code>profiler.py</code></td></tr>
+    <tr><td>F2 · suitability analysis</td><td>Decide the route</td><td>Rules R1–R4, R8; learned allocators</td></tr>
+    <tr><td>F3 · partitioning</td><td>Split into subtasks</td><td><code>templates.py</code> (fixed split per algorithm, Phase 1)</td></tr>
+    <tr><td>F4 · resource estimation and feasibility</td><td>Fits the QPU? If not, redesign</td><td>Rules R5–R7; Phase 2 predictors</td></tr>
+    <tr><td>F5 · hybrid execution</td><td>QPU ⇄ CPU loop</td><td><code>baselines.py</code>: SPSA-optimised VQE/QAOA on a noisy simulator</td></tr>
+    <tr><td>F6 · feedback and federated learning</td><td>Learn from outcomes, share models not data</td><td>Feedback: Phase 3. Federation: Phase 6 (not built)</td></tr>
+    <tr><td>§10 · evaluation table</td><td>Classical-only vs quantum-only vs rule-based vs AI hybrid</td><td>Filled in by Phase 3 (simulation study)</td></tr>
+    <tr><td>§14 · hypothesis</td><td>Adaptive AI allocation beats static rules</td><td>Supported in simulation; needs real feedback (Phase 5) to confirm</td></tr>
+  </table></div>
+  <pre class="mermaid">
+flowchart LR
+  A[Application] --> F1[F1 Characterize<br/>TaskProfile]
+  F1 --> P2[Phase 2 predictor<br/>gates · depth · groups]
+  P2 --> F2[F2 Suitability<br/>Phase 1 rules or Phase 3 AI]
+  F1 --> F2
+  F2 --> F3[F3 Partition<br/>templates]
+  F3 --> F4[F4 Feasible on QPU?]
+  F4 -- no --> R[REDESIGN]
+  F4 -- yes --> F5[F5 Execute<br/>CPU/GPU ⇄ QPU]
+  F2 -- classical --> C[CPU / GPU]
+  F5 --> F6[F6 Feedback<br/>time · energy · error]
+  F6 -. retrain .-> F2
+  </pre>
+  <p>The development plan has six phases. This handbook covers the first three, which are built and tested:</p>
+  <div class="tbl"><table>
+    <tr><th>Phase</th><th>Proposal wording</th><th>Status</th></tr>
+    <tr><td>1 · Rule-based prototype</td><td>Implement the decision rules and establish a baseline for HPC, QPU and hybrid selection</td><td>Built: 9 rules, profiler, baselines, CSV dataset</td></tr>
+    <tr><td>2 · Resource prediction</td><td>ML models to predict qubit count, depth, gate count, shots, runtime, energy and error</td><td>Built: 608-row transpiler dataset, three model families, extrapolation tests</td></tr>
+    <tr><td>3 · AI task allocation</td><td>Use ML predictions to replace or augment fixed resource-mapping decisions</td><td>Built as a simulation study: 2,432 labelled tasks, 7 allocators, feedback curve</td></tr>
+    <tr><td>4–6</td><td>Partitioning, QPU integration, federated learning</td><td>Planned; see <a href="#next">Phases 4–6</a></td></tr>
+  </table></div>
+</section>
+
+<section class="part" id="run">
+  <h2>Running the demos</h2>
+  <p>Everything runs on a laptop with no IBM account. Fake backends carry real device layouts and calibration data, and qiskit-aer simulates noise.</p>
+<pre><span class="dim"># one-time setup (Python 3.11+)</span>
+python3 -m venv .venv &amp;&amp; .venv/bin/pip install -e ".[test]"
+.venv/bin/pytest                                   <span class="dim"># 29 tests, ~8 s</span>
+
+<span class="k">python -m hybrid_mapper demo</span>                       <span class="dim"># guided tour of all three phases, ~20 s</span>
+python -m hybrid_mapper demo --phase 3             <span class="dim"># one phase only</span>
+
+python -m hybrid_mapper decide --preset fes_sqd    <span class="dim"># Phase 1: full rule trace</span>
+python -m hybrid_mapper predict --workload maxcut --size 80 --reps 2 --backend heron_r3 --compare   <span class="dim"># Phase 2</span>
+python -m hybrid_mapper allocate --workload vqe --size 100 --reps 2 --compare                       <span class="dim"># Phase 3</span>
+python -m hybrid_mapper report                     <span class="dim"># regenerate results/*.md, ~1 min</span></pre>
+  <div class="note win"><span class="tag">Presenting tip</span><p>Run <code>demo</code> once before the meeting so the Python imports are warm. If something breaks live, <code>results/</code> holds every table already generated, and every number in this handbook comes from those files.</p></div>
+</section>
+
+<!-- ================================================================ FOUNDATIONS -->
+<section class="part" id="hpc">
+  <p class="part-label">Foundations</p>
+  <h2>Classical HPC</h2>
+  <p>A <strong>CPU core</strong> runs one instruction stream very flexibly; a modern CPU has tens of cores. A <strong>GPU</strong> has thousands of simpler cores that apply the same operation to different data at once, which is what matrix arithmetic, simulation and neural networks need. A <strong>node</strong> is one server: CPUs, GPUs and RAM. A <strong>cluster</strong> is thousands of nodes joined by a fast <strong>interconnect</strong>. That, plus the software that shares it, is high-performance computing.</p>
+  <p>Two programming styles matter. Shared memory (OpenMP, CUDA) runs many threads inside one node. Distributed memory (MPI) runs separate processes that exchange messages across nodes. Users don't run on the machine directly. They submit job scripts to a workload manager, usually <strong>Slurm</strong>, which queues them and allocates nodes. Slurm's "generic resource" (GRES) mechanism started with GPUs; IBM and partners extended it so a QPU can be requested the same way (see <a href="#qcsc">QCSC</a>).</p>
+  <h3>Bandwidth, not flops, limits quantum simulation</h3>
+  <p>A statevector simulator multiplies a vector of 2ⁿ complex amplitudes by a gate for every gate in the circuit. Each multiply touches the whole vector but does little arithmetic per byte, so the speed limit is <strong>memory bandwidth</strong> (hundreds of GB/s per node), not compute. That is why the Phase 3 ground-truth model estimates statevector time as <code>gates × 2ⁿ × 32 bytes ÷ bandwidth</code>.</p>
+  <h3>The exponential wall</h3>
+  <p>Leading supercomputers are exascale: 10¹⁸ floating-point operations per second. That is still not enough for problems whose cost doubles with every extra particle or variable. Adding GPUs scales linearly; the problem scales exponentially. That gap is the opening for quantum computing, and also the reason it has to be used selectively.</p>
+</section>
+
+<section class="part" id="qubits">
+  <h2>Qubits, circuits, shots</h2>
+  <p>A bit is 0 or 1. A <strong>qubit</strong> has a state α|0⟩ + β|1⟩ with complex <strong>amplitudes</strong>, |α|² + |β|² = 1. Measuring gives 0 with probability |α|² and 1 with probability |β|², and destroys the superposition. With n qubits the state has <strong>2ⁿ amplitudes</strong>, one per bitstring: 50 qubits means about 10¹⁵ numbers. That one fact explains why quantum computers might do things classical ones cannot, and why simulating them classically gets expensive.</p>
+  <div class="note warn"><span class="tag">Misconception to avoid</span><p>A quantum computer does not "try every answer at once and return the best". A measurement returns one bitstring. Algorithms arrange interference so wrong answers cancel and good ones reinforce, which only works for problems with special structure.</p></div>
+  <p><strong>Gates</strong> rotate qubits. Single-qubit gates (X, H, RZ(θ), SX) act on one qubit; <strong>two-qubit gates</strong> (CNOT, CZ, ECR) act on a pair and create <strong>entanglement</strong>. A <strong>circuit</strong> is a sequence of gates. Its <strong>width</strong> is the number of qubits, and its <strong>depth</strong> is the number of layers when gates that can run in parallel are grouped together. The two-qubit gate count is the single most important cost number on today's hardware: two-qubit gates are roughly ten times noisier than single-qubit ones (on the FakeFez snapshot, median CZ error is 3.9×10⁻³ against 2.3×10⁻⁴ for SX).</p>
+  <h3>Shots, Sampler and Estimator</h3>
+  <p>One run gives one random bitstring, so circuits are repeated. Each repetition is a <strong>shot</strong>. Qiskit has two primitives. The <strong>Sampler</strong> returns bitstrings and their frequencies (used by QAOA and SQD). The <strong>Estimator</strong> returns an expectation value ⟨O⟩ of an observable, such as a molecule's energy (used by VQE and dynamics).</p>
+  <p>Physical quantities are written as a <strong>Hamiltonian</strong>, a weighted sum of Pauli strings:</p>
+  <div class="eq">H = Σᵢ cᵢ Pᵢ ,  Pᵢ ∈ {I, X, Y, Z}^⊗n      e.g.  H = 0.4·ZZI − 0.2·XIX + …</div>
+  <p>The number of terms and the size of their coefficients set the measurement cost. To estimate ⟨H⟩ to precision ε by sampling each term, the shot count scales as</p>
+  <div class="eq">N_shots ≈ ( Σᵢ |cᵢ| / ε )²</div>
+  <p>Terms that commute <em>qubit-wise</em> (on every qubit, the Paulis are equal or one is I) can be measured together; each such set is a <strong>measurement group</strong>. Fewer groups means fewer distinct circuits to run, which is why the proposal lists measurement groups as a feature and the Task Profile stores them. A Max-Cut Hamiltonian is all ZZ terms, so it is one group. <strong>Chemical accuracy</strong> is ε = 1.6 mHa (1 kcal/mol), a common chemistry target.</p>
+  <div class="panel" id="shotsCalc">
+    <p class="panel-title">Shot-count estimator</p>
+    <p class="panel-sub">Noise-free shots for an expectation value, then the same with the 1/F² mitigation overhead.</p>
+    <div class="grid">
+      <div class="field"><label for="sc_c">Σ|cᵢ|</label><input id="sc_c" type="number" value="50" step="1" min="0"></div>
+      <div class="field"><label for="sc_e">Precision ε</label><input id="sc_e" type="number" value="0.0016" step="0.0001" min="0.00001"></div>
+      <div class="field"><label for="sc_f">Circuit fidelity F</label><input id="sc_f" type="number" value="0.05" step="0.01" min="0.000001" max="1"></div>
+      <div class="field"><label for="sc_t">QPU throughput (shots/s)</label><input id="sc_t" type="number" value="4000" step="100" min="1"></div>
+    </div>
+    <div class="out" id="sc_out"></div>
+  </div>
+</section>
+
+<section class="part" id="hardware">
+  <h2>Today's IBM hardware</h2>
+  <p>The project targets two IBM processor families. Every number below is in <code>config/backends.yaml</code> or was read from the FakeFez snapshot that ships with qiskit-ibm-runtime.</p>
+  <div class="tbl"><table>
+    <tr><th></th><th>Heron r3 (<code>heron_r3</code>)</th><th>Nighthawk r2 (<code>nighthawk_r2</code>)</th></tr>
+    <tr><td>Qubits</td><td class="num">156</td><td class="num">120</td></tr>
+    <tr><td>Connectivity</td><td>heavy-hex: each qubit has at most 3 neighbours</td><td>square lattice: 4 neighbours, 218 tunable couplers</td></tr>
+    <tr><td>Error per layered gate (EPLG)</td><td class="num">2.15×10⁻³</td><td class="num">3×10⁻³</td></tr>
+    <tr><td>Throughput (circuits/s)</td><td class="num">≈ 4,000</td><td class="num">≈ 100,000</td></tr>
+    <tr><td>How we transpile for it</td><td>FakeFez (a real 156-qubit Heron layout)</td><td>10×12 grid <code>CouplingMap</code>, basis cz, rz, sx, x: a topology proxy</td></tr>
+  </table></div>
+  <p>IBM announced Nighthawk on 12 November 2025: 120 qubits, 218 tunable couplers in a square lattice, circuits of up to 5,000 two-qubit gates, with targets of 7,500 by the end of 2026 and 10,000 in 2027. The EPLG and throughput figures come from IBM's own announcements. There is no fake Nighthawk backend, so the grid is an honest stand-in for its connectivity, labelled as such in the config.</p>
+  <h3>What EPLG means</h3>
+  <p><strong>Layer fidelity</strong> (McKay et al., 2023) runs randomised benchmarking on a whole layer of simultaneous two-qubit gates along a long chain of qubits, so it captures crosstalk and idling errors that isolated-pair benchmarks miss. <strong>EPLG</strong> converts that into an error per gate that does not depend on the chain length. It is the right single number for "how likely is one two-qubit gate in a real circuit to fail", which is exactly what the fidelity formula needs. One caution from the benchmarking literature: EPLG depends on which qubit chain is measured, so treat it as a representative figure, not a per-qubit truth.</p>
+  <h3>The FakeFez calibration snapshot</h3>
+  <dl class="kv">
+    <dt>readout error</dt><dd>median 0.76% per qubit (mean 1.3%). Used by the Phase 3 ground truth.</dd>
+    <dt>CZ error</dt><dd>median 3.9×10⁻³ (an older snapshot than the 2.15×10⁻³ Heron r3 EPLG figure)</dd>
+    <dt>CZ duration</dt><dd>median 84 ns</dd>
+    <dt>T1 / T2</dt><dd>medians 145 µs / 88 µs: how long a qubit keeps energy and phase</dd>
+  </dl>
+</section>
+
+<section class="part" id="transpile">
+  <h2>Transpilation and routing</h2>
+  <p>You write a circuit in terms of whatever gates you like, on idealised qubits that all talk to each other. Hardware supports a few native gates (on IBM: CZ, RZ, SX, X) and only lets neighbouring qubits interact. The <strong>transpiler</strong> bridges the two in stages:</p>
+  <ol>
+    <li><strong>Layout</strong>: choose which physical qubit each logical qubit sits on. Qiskit first tries <strong>VF2Layout</strong>, a subgraph-isomorphism search for a placement where every interaction is already between neighbours.</li>
+    <li><strong>Routing</strong>: if no perfect placement exists, insert <strong>SWAP</strong> gates to move qubit states next to each other. A SWAP costs three CNOTs. Qiskit uses <strong>SABRE</strong> (Li, Ding and Xie, 2019), a heuristic that looks ahead to pick SWAPs that serve upcoming gates.</li>
+    <li><strong>Translation and optimisation</strong>: rewrite into native gates and cancel redundancies. <code>optimization_level=3</code> is the most aggressive.</li>
+  </ol>
+  <p>Routing is why the transpiled two-qubit gate count can be several times the logical count, and why it depends on the topology. Our profiler counts two-qubit gates after transpilation, as instructions whose <code>operation.num_qubits == 2</code>:</p>
+<pre><span class="k">def</span> transpile_for(circuit, backend, seed=0):
+    <span class="k">return</span> transpile(circuit, optimization_level=3, seed_transpiler=seed, **transpile_kwargs(backend))
+
+<span class="k">def</span> two_qubit_count(circuit):
+    <span class="k">return</span> sum(1 <span class="k">for</span> inst <span class="k">in</span> circuit.data <span class="k">if</span> inst.operation.num_qubits == 2)</pre>
+  <div class="note ask"><span class="tag">Something we measured</span><p>Transpiling is usually under a second, but a 70-qubit circular-entanglement ansatz on Heron took about 28 seconds, while an 80-qubit one took 1 second. A 70-qubit ring has no exact embedding in heavy-hex, so VF2's search runs to its limit before routing takes over. 20 of the 608 transpiles in the Phase 2 dataset took over 10 seconds. It is a concrete argument for predicting resources instead of always transpiling.</p></div>
+</section>
+
+<section class="part" id="noise">
+  <h2>Noise, fidelity, mitigation</h2>
+  <p>If each two-qubit gate succeeds with probability (1 − ε), a circuit with N of them runs without a two-qubit error with probability about</p>
+  <div class="eq">F ≈ (1 − ε)^N = exp( N · ln(1 − ε) ) ≈ e^(−εN)</div>
+  <p>This is the formula Phase 1 uses, with ε = EPLG. It deliberately ignores single-qubit, readout, idling and crosstalk errors, so it is optimistic. It is the standard first-order estimate, and the gap between it and reality is something later phases can learn.</p>
+  <div class="panel" id="fidCalc">
+    <p class="panel-title">Circuit fidelity estimator</p>
+    <p class="panel-sub">Slide the gate count and see why a few thousand gates is already the edge of today's hardware.</p>
+    <div class="grid">
+      <div class="field"><label for="fc_n">Two-qubit gates N</label><input id="fc_n" type="range" min="0" max="20000" step="50" value="3500"></div>
+      <div class="field"><label for="fc_e">Error per gate ε</label><select id="fc_e"><option value="0.00215" selected>2.15e-3 (Heron r3)</option><option value="0.003">3e-3 (Nighthawk r2)</option><option value="0.0039">3.9e-3 (FakeFez CZ median)</option><option value="0.001">1e-3 (hypothetical)</option></select></div>
+    </div>
+    <div class="out" id="fc_out"></div>
+  </div>
+  <h3>Error mitigation</h3>
+  <p>Today's hardware has no error correction, so results are cleaned up statistically. <strong>Zero-noise extrapolation</strong> (ZNE) runs the circuit at amplified noise levels and extrapolates back to zero noise. <strong>Probabilistic error cancellation</strong> (PEC) learns the noise and cancels it on average by sampling corrected circuit variants (Temme, Bravyi and Gambetta, 2017). IBM's 127-qubit "utility" experiment used <strong>probabilistic error amplification</strong>, a more controlled form of noise amplification for ZNE (Kim et al., 2023). Readout errors get their own fix: twirled readout mitigation turns readout bias into a measurable factor that can be divided out (van den Berg, Minev and Temme, 2022).</p>
+  <p>All of these work on <strong>expectation values</strong>, and all of them cost extra shots. The sampling overhead grows roughly like 1/F²: at F = 0.05 that is 400 times more shots. The project uses 1/F² as a rough multiplier and says so in its limitations.</p>
+  <div class="note"><span class="tag">Error correction, for context</span><p>Fault tolerance encodes each reliable logical qubit in many physical ones. IBM's roadmap targets a fault-tolerant system by 2029. Until then every algorithm in this project lives with noise, which is why noise tolerance varies so much between algorithms and why the rules use a different threshold for each.</p></div>
+</section>
+
+<section class="part" id="sim">
+  <h2>Simulating circuits classically</h2>
+  <p>This section justifies the proposal's line "a small qubit count does not automatically imply QPU use", and Phase 3 adds the converse: a large qubit count does not automatically imply QPU use either.</p>
+  <h3>Statevector: exact, exponential in n</h3>
+  <p>Store all 2ⁿ amplitudes at 16 bytes each (two 64-bit floats). Memory is <code>16 × 2ⁿ</code> bytes: 30 qubits = 16 GiB (a workstation), 35 qubits = 512 GiB (a large HPC node), and around 45–50 qubits exceeds the memory of the biggest machines. A 45-qubit circuit was simulated on a supercomputer in 2017 using about half a petabyte (Häner and Steiger). Phase 1's rule R2 uses the 16 GiB line; Phase 3's ground truth assumes a 512 GiB node.</p>
+  <h3>Tensor networks: cheap when entanglement is low</h3>
+  <p>A <strong>matrix product state</strong> (MPS) writes the state as a chain of small tensors, one per qubit. The size of the bond between neighbouring tensors, the <strong>bond dimension</strong> χ, must be at least 2^(entanglement across that cut, in ebits). Vidal (2003) showed that circuits that create little entanglement can therefore be simulated efficiently, whatever their width. Memory is about <code>n · χ² · 16</code> bytes and time about <code>gates · χ³</code>.</p>
+  <p>The Phase 3 ground truth bounds the entanglement without simulating anything. A CZ gate across a cut can at most double the Schmidt rank there, so the entanglement across a cut is at most the number of CZs crossing it, and never more than the number of qubits on the smaller side. For a linear-entanglement ansatz with r layers, each layer puts one CZ across the middle cut, so the bound is r ebits and χ ≤ 2^r: a 100-qubit, 2-layer ansatz needs χ = 4. That task looks enormous to a rule that only counts qubits.</p>
+<pre><span class="k">def</span> entanglement_bound(circuit, order=None):
+    <span class="dim">"""Max ebits across any cut: each crossing CZ can at most double the Schmidt rank."""</span>
+    ...
+    <span class="k">for</span> inst <span class="k">in</span> decomposed.data:
+        <span class="k">if</span> inst.operation.num_qubits == 2:
+            a, b = sorted(position[q] <span class="k">for</span> q <span class="k">in</span> inst.qubits)
+            diff[a + 1] += 1; diff[b + 1] -= 1        <span class="dim"># gate crosses every cut a &lt; k &lt;= b</span>
+    crossings = cumsum(diff)[1:n]
+    <span class="k">return</span> max(min(crossings[k], k, n - k) <span class="k">for</span> k <span class="k">in</span> cuts)</pre>
+  <div class="panel" id="memCalc">
+    <p class="panel-title">Statevector vs MPS memory</p>
+    <p class="panel-sub">Same qubit count, very different classical cost depending on entanglement.</p>
+    <div class="grid">
+      <div class="field"><label for="mc_n">Qubits n</label><input id="mc_n" type="number" value="100" min="1" max="200"></div>
+      <div class="field"><label for="mc_e">Entanglement bound (ebits)</label><input id="mc_e" type="number" value="2" min="0" max="100"></div>
+    </div>
+    <div class="out" id="mc_out"></div>
+  </div>
+  <h3>Other classical shortcuts</h3>
+  <ul>
+    <li><strong>Clifford circuits</strong> (only H, S, CNOT and Paulis) are simulable in polynomial time at any size: the Gottesman–Knill theorem (Gottesman, 1998; Aaronson and Gottesman, 2004).</li>
+    <li><strong>Problem-specific algorithms.</strong> For Max-Cut, Goemans–Williamson (1995) guarantees a cut within 0.878 of optimal. Low-depth QAOA's worst-case guarantees on 3-regular graphs are lower (next section).</li>
+    <li><strong>GPU simulators</strong> (Qiskit Aer, NVIDIA cuQuantum) speed up both statevector and tensor-network methods.</li>
+  </ul>
+  <div class="note say"><span class="tag">Say this</span><p>A QPU is only worth using when the problem is too large or too entangled to simulate classically and still small and shallow enough to run on noisy hardware. That window is narrow today, and the framework's first job is to find it.</p></div>
+</section>
+
+<section class="part" id="algos">
+  <h2>Hybrid algorithms</h2>
+  <p>Almost every useful near-term algorithm is a loop: the QPU does the one step classical machines struggle with, and the classical side does everything else. This is the proposal's Function 5.</p>
+  <pre class="mermaid">
+flowchart LR
+  O[Classical optimiser<br/>CPU] -- parameters θ --> Q[Circuit U θ<br/>QPU · shots]
+  Q -- energy or bitstrings --> O
+  </pre>
+  <h3>VQE: Variational Quantum Eigensolver</h3>
+  <p>A parameterised circuit (the <strong>ansatz</strong>) prepares a trial state; the QPU estimates its energy ⟨H⟩ with the Estimator; a classical optimiser adjusts the parameters to lower it (Peruzzo et al., 2014). <strong>Hardware-efficient</strong> ansätze use layers of native rotations and entangling gates (Kandala et al., 2017); our <code>efficient_su2</code> workloads are of this type. VQE needs accurate expectation values, so it is noise-sensitive, and it can suffer <strong>barren plateaus</strong>: in large random circuits, gradients vanish exponentially (McClean et al., 2018).</p>
+  <h3>QAOA: Quantum Approximate Optimisation Algorithm</h3>
+  <p>Alternating cost and mixer layers, p rounds (Farhi, Goldstone and Gutmann, 2014). For Max-Cut each graph edge becomes a ZZ interaction, which costs 2 two-qubit gates per edge per layer, so the logical count is exactly <strong>2·p·|E|</strong>. The Sampler returns candidate cuts and the classical side keeps the best. Worst-case guarantees on 3-regular graphs: p = 1 gives at least 0.6924 of the optimum (Farhi et al.), p = 2 at least 0.7559, and p = 3 at least 0.7924 assuming a conjecture about worst-case graphs (Wurtz and Love, 2021). All are below Goemans–Williamson's 0.878.</p>
+  <h3>SQD: Sample-based Quantum Diagonalisation</h3>
+  <p>The QPU only samples likely electron configurations. Classical HPC repairs noisy samples ("configuration recovery"), then solves the problem exactly inside that much smaller subspace. In the IBM–RIKEN study (Robledo-Moreno et al., <em>Science Advances</em>, 2025), a Heron processor ran circuits of up to 77 qubits and 10,570 gates for N₂ and the [2Fe-2S] and [4Fe-4S] iron–sulfur clusters, with the Fugaku supercomputer doing the diagonalisation. The authors themselves say this does not establish that the method beats every classical algorithm.</p>
+  <div class="note"><span class="tag">How the presets use it</span><p>The <code>fes_sqd</code> and <code>fes_vqe</code> presets are spec-only profiles in the spirit of that experiment: 77 qubits and an assumed 3,500 two-qubit gates (a fraction of the reported 10,570 total gates). No 77-qubit circuit is built. Present them as illustrative, not as the paper's exact numbers.</p></div>
+  <h3>SPSA: the optimiser in our baselines</h3>
+  <p>Simultaneous Perturbation Stochastic Approximation (Spall, 1992) estimates a gradient from only two function evaluations, by perturbing every parameter at once in a random ±c direction. That makes it popular for noisy, shot-based objectives. Its step size must suit the scale of the objective. Our first version used a fixed step and barely moved the VQE parameters (4-qubit error about 5 Ha), so <code>baselines.py</code> now calibrates the step from a few sampled gradients, as Qiskit's SPSA does. After the fix, the 4-qubit hybrid VQE reaches −7.87 against an exact −8.53. That bug-and-fix story makes a good interview answer about debugging.</p>
+</section>
+
+<section class="part" id="ml">
+  <h2>The ML you need</h2>
+  <p>Supervised learning: examples with <strong>features</strong> (inputs) and a <strong>label</strong> (the answer). <strong>Classification</strong> predicts a category ("CLASSICAL, HYBRID or REDESIGN?"). <strong>Regression</strong> predicts a number ("how many two-qubit gates after routing?").</p>
+  <h3>The three model families in this repo</h3>
+  <div class="tbl"><table>
+    <tr><th>Model</th><th>Idea</th><th>Strength</th><th>Weakness</th></tr>
+    <tr><td>Ridge regression on logs (power law)</td><td>Fit log y = a + b·log n + c·log reps + d·log(analytic). Ridge adds a small penalty on coefficient size (Hoerl and Kennard, 1970).</td><td>Smooth; extrapolates to larger sizes; coefficients mean something (an exponent)</td><td>Only captures what its form allows</td></tr>
+    <tr><td>Decision tree (CART)</td><td>Recursively split on one feature at a time (Breiman et al., 1984)</td><td>Readable as if-then rules; a natural successor to Phase 1</td><td>Piecewise constant: cannot predict beyond the training range</td></tr>
+    <tr><td>Gradient-boosted trees</td><td>Add many small trees, each correcting the previous ones' errors (Friedman, 2001); we use scikit-learn's histogram version</td><td>Usually the best on tabular data</td><td>Same extrapolation limit as trees; less readable</td></tr>
+  </table></div>
+  <h3>Metrics</h3>
+  <dl class="kv">
+    <dt>MAPE</dt><dd>mean of |predicted − exact| / exact. "Off by 14% on average."</dd>
+    <dt>R²</dt><dd>share of variance explained; 1 is perfect, 0 is no better than predicting the mean, negative is worse.</dd>
+    <dt>accuracy</dt><dd>share of correct decisions. Misleading when one class dominates.</dd>
+    <dt>macro-F1</dt><dd>F1 (harmonic mean of precision and recall) averaged equally over classes, so rare classes like HYBRID count as much as common ones.</dd>
+    <dt>regret</dt><dd>extra cost of a decision compared with the best possible decision. Defined precisely in <a href="#p3-learn">Phase 3</a>.</dd>
+  </dl>
+  <h3>Evaluation discipline</h3>
+  <ul>
+    <li><strong>Held-out data.</strong> Score only on data the model never trained on, or you measure memorisation.</li>
+    <li><strong>Group splits.</strong> In Phase 3 the same circuit appears under four operating conditions. Splitting by row would put a circuit's twin in both train and test (leakage). We split by workload with <code>GroupShuffleSplit</code>.</li>
+    <li><strong>Extrapolation split.</strong> Train on ≤ 40 qubits, test on 50–120. This is the question that matters: will the model work on problems bigger than anything it has seen?</li>
+    <li><strong>Class imbalance.</strong> 68% of Phase 3 tasks are CLASSICAL. We use balanced class weights and report macro-F1.</li>
+    <li><strong>Cost-sensitive learning.</strong> Not all mistakes cost the same: sending a doomed job to the QPU wastes far more than wrongly choosing classical. Elkan (2001) shows that weighting training examples by misclassification cost is the principled fix. The gradient-boosting allocator does this.</li>
+    <li><strong>Permutation importance.</strong> Shuffle one feature and see how much the score drops (Breiman, 2001). It tells you what the model actually relies on.</li>
+  </ul>
+  <h3>Federated learning, briefly (Phase 6)</h3>
+  <p>Each site trains locally and shares only model parameters; a coordinator averages them, weighted by data size. This is FedAvg (McMahan et al., 2017). Two known problems: sites have different data (non-IID), and trees cannot simply be averaged. Our power-law models are linear, so averaging them is exact, which is one reason to keep that family in the toolbox.</p>
+</section>
+
+<section class="part" id="qcsc">
+  <h2>Quantum-centric supercomputing</h2>
+  <p>On 12 March 2026 IBM published what it calls the first reference architecture for quantum-centric supercomputing (QCSC): QPUs treated as part of an HPC system. Coverage describes four logical layers: hardware infrastructure, system orchestration, application middleware, and applications. The orchestration layer runs on the <strong>Quantum Resource Management Interface</strong> (QRMI), which other resource managers like Slurm can call, with a Slurm plugin (SPANK) to expose QPUs as schedulable resources. RIKEN and IBM ran closed-loop exchange between a Heron processor and all of Fugaku for iron–sulfur clusters.</p>
+  <div class="note say"><span class="tag">The framing that makes the project click</span><p>IBM's architecture provides the plumbing to run a hybrid job once someone has decided the split. The application layer is where that decision lives, and today it is made by hand. Our framework automates the decision, and its output could become the job request that QRMI and Slurm carry out.</p></div>
+  <h3>Related systems to cite</h3>
+  <div class="tbl"><table>
+    <tr><th>Work</th><th>What it does</th><th>How we differ</th></tr>
+    <tr><td>Qonductor (Giortamis et al., SC'25)</td><td>Cloud orchestrator; Pareto-optimal scheduler trading fidelity against job completion time; evaluated on 7,000+ real IBM runs</td><td>Schedules jobs already destined for a QPU; we decide whether a task should use one at all</td></tr>
+    <tr><td>QPU-time prediction (Xing et al., 2025)</td><td>LightGBM predicts IBM QPU processing time from 166,143 real jobs</td><td>Close to our Phase 2 runtime model; we also predict circuit resources and make the routing decision</td></tr>
+    <tr><td>QCSC reference architecture (IBM, 2026)</td><td>Layers and tiers for integrating QPUs into HPC</td><td>Leaves decomposition to the application layer, which is our layer</td></tr>
+    <tr><td>SQD on Heron + Fugaku (2025)</td><td>Hybrid chemistry at 77 qubits</td><td>A hand-designed split; we automate the choice of split</td></tr>
+    <tr><td>Circuit cutting (Peng et al., 2020; CutQC, 2021)</td><td>Split a large circuit into smaller ones, recombined classically</td><td>A tool Phase 4 could use when R5 says "too many qubits"</td></tr>
+  </table></div>
+</section>
+
+<!-- ================================================================ PHASE 1 -->
+<section class="part" id="p1-profile">
+  <p class="part-label">Phase 1 · Rule-based prototype</p>
+  <h2>The Task Profile</h2>
+  <p>A <code>TaskProfile</code> is one structured record describing a task. It is the input to every decision and one row of the dataset later phases learn from. Fields come in three tiers that differ in how much they cost to obtain, and that difference is the whole motivation for Phase 2.</p>
+  <div class="tbl"><table>
+    <tr><th>Tier</th><th>Fields</th><th>Cost</th></tr>
+    <tr><td>Problem</td><td><code>task_id</code>, <code>problem_class</code> {classical, chem, opt, dyn, samp}, <code>algorithm</code> {none, vqe, dyn, qaoa, sqd, samp}, <code>precision_target</code>, <code>deadline_min</code>, <code>classical_meets_target</code>, <code>low_entanglement</code></td><td>Free: known before any circuit exists</td></tr>
+    <tr><td>Circuit</td><td><code>n_qubits</code>, <code>depth</code>, <code>two_qubit_gates</code>, <code>sum_abs_coeffs</code>, <code>measurement_groups</code>, <code>samples_needed</code></td><td>Build and transpile the circuit: up to seconds or more</td></tr>
+    <tr><td>Hardware</td><td><code>target_qpu</code>, <code>eplg</code>, <code>throughput_per_s</code>, <code>queue_wait_min</code>, <code>shot_budget</code></td><td>From calibration data; changes daily</td></tr>
+  </table></div>
+<pre>{
+  <span class="k">"task_id"</span>: "fes_sqd",       "problem_class": "chem",  "algorithm": "sqd",
+  "precision_target": 0.001,  "deadline_min": 480,
+  "classical_meets_target": false,  "low_entanglement": false,
+  <span class="k">"n_qubits"</span>: 77,  "two_qubit_gates": 3500,  "samples_needed": 3000000,
+  <span class="k">"target_qpu"</span>: "heron_r3",  "eplg": 0.00215,  "throughput_per_s": 4000,
+  "queue_wait_min": 60,  "shot_budget": 10000000.0
+}</pre>
+  <p>The dataclass validates <code>problem_class</code> and <code>algorithm</code> on construction, because JSON from outside is a trust boundary, and round-trips through JSON for logging.</p>
+</section>
+
+<section class="part" id="p1-rules">
+  <h2>Derived numbers and the nine rules</h2>
+  <h3>Derived quantities</h3>
+  <div class="eq">F = exp( two_qubit_gates · ln(1 − eplg) )</div>
+  <div class="eq">kind:  vqe, dyn → expect    qaoa, samp → sample    sqd → recover</div>
+  <div class="eq">shots = (sum_abs_coeffs / precision)² / F²   if expect;    samples_needed   otherwise</div>
+  <div class="eq">qpu_seconds = shots / throughput        statevector_bytes = 16 · 2^n_qubits</div>
+  <h4 class="sub">Worked example: fes_sqd</h4>
+  <ol>
+    <li>ln(1 − 0.00215) = −0.0021523. Times 3,500 gates = −7.533. F = e^(−7.533) ≈ <strong>5.35×10⁻⁴</strong>.</li>
+    <li>SQD is the recover kind, so shots = samples_needed = 3×10⁶.</li>
+    <li>QPU time = 3×10⁶ ÷ 4,000 = <strong>750 s</strong> = 12.5 minutes. Queue 60 + 12.5 = 72.5 min, under the 480-minute deadline.</li>
+    <li>Same circuit as VQE (<code>fes_vqe</code>, Σ|c| = 50, ε = 10⁻³): shots = (50 / 0.001)² / (5.35×10⁻⁴)² = 2.5×10⁹ / 2.86×10⁻⁷ ≈ <strong>8.7×10¹⁵</strong>. At 4,000 shots/s that is about 69,000 years.</li>
+  </ol>
+  <h3>The rules, in order</h3>
+  <p>The first rule that fires decides. Cheap checks come first. Every threshold lives in <code>config/rules.yaml</code>, and a test proves that editing it changes decisions with no code change.</p>
+  <div class="tbl"><table>
+    <tr><th>Rule</th><th>Fires when</th><th>Route</th><th>Why</th></tr>
+    <tr><td>R1</td><td>problem_class = classical or algorithm = none</td><td><span class="chip c-classical">CLASSICAL</span></td><td>No quantum formulation, nothing to map</td></tr>
+    <tr><td>R2</td><td>16 · 2ⁿ bytes ≤ 16 GiB (n ≤ 30)</td><td><span class="chip c-classical">CLASSICAL</span></td><td>Exact simulation beats a noisy QPU with a queue</td></tr>
+    <tr><td>R3</td><td>low_entanglement</td><td><span class="chip c-classical">CLASSICAL</span></td><td>Tensor networks handle it</td></tr>
+    <tr><td>R4</td><td>classical_meets_target</td><td><span class="chip c-classical">CLASSICAL</span></td><td>The QPU would add cost, not value</td></tr>
+    <tr><td>R5</td><td>n_qubits &gt; QPU qubits</td><td><span class="chip c-redesign">REDESIGN</span></td><td>Does not fit: cut, shrink, or fragment</td></tr>
+    <tr><td>R6</td><td>F &lt; F_min[kind]: expect 0.05, sample 0.01, recover 10⁻⁴</td><td><span class="chip c-redesign">REDESIGN</span></td><td>Output would be mostly noise for this algorithm</td></tr>
+    <tr><td>R7</td><td>shots &gt; shot_budget</td><td><span class="chip c-redesign">REDESIGN</span></td><td>Measurement cost unaffordable</td></tr>
+    <tr><td>R8</td><td>queue + QPU time &gt; deadline</td><td><span class="chip c-classical">CLASSICAL</span></td><td>QPU cannot answer in time; fall back</td></tr>
+    <tr><td>R9</td><td>otherwise</td><td><span class="chip c-hybrid">HYBRID</span></td><td>Feasible; split from <code>templates.py</code></td></tr>
+  </table></div>
+  <h3>Why the fidelity threshold depends on the algorithm</h3>
+  <p><strong>Expect</strong> (VQE, dynamics): mitigation overhead is about 1/F², so F = 0.05 already means 400× more shots; below that it is impractical. <strong>Sample</strong> (QAOA, sampling): you need some fraction of error-free bitstrings; 1% is the starting assumption. <strong>Recover</strong> (SQD): classical configuration recovery repairs noisy samples, so it tolerates F ≈ 10⁻⁴; the 77-qubit study sat near that. One threshold for all algorithms would be wrong, and the <code>fes_sqd</code>/<code>fes_vqe</code> pair shows why.</p>
+  <div class="note"><span class="tag">How it is coded</span><p>The rules are data, not nested ifs: a list of (id, route, predicate, reason-if-fired, reason-if-passed) tuples with lambdas evaluated lazily, in order. The trace is free, the order can be changed for ablations, and the thresholds come from YAML.</p></div>
+</section>
+
+<section class="part" id="p1-engine">
+  <h2>Live rule engine</h2>
+  <p>This is the same logic as <code>rules.py</code>, ported to the page. Pick a preset, then change one input at a time and watch which rule fires. You can demo this from the handbook itself.</p>
+  <div class="panel" id="engine">
+    <div class="btns" id="eng_presets"></div>
+    <div class="grid">
+      <div class="field"><label for="e_class">Problem class</label><select id="e_class"><option>classical</option><option>chem</option><option>opt</option><option>dyn</option><option>samp</option></select></div>
+      <div class="field"><label for="e_alg">Algorithm</label><select id="e_alg"><option>none</option><option>vqe</option><option>dyn</option><option>qaoa</option><option>sqd</option><option>samp</option></select></div>
+      <div class="field"><label for="e_qpu">Target QPU</label><select id="e_qpu"><option value="heron_r3">heron_r3 · 156 q</option><option value="nighthawk_r2">nighthawk_r2 · 120 q</option></select></div>
+      <div class="field"><label for="e_n">Qubits</label><input id="e_n" type="number" min="1" value="77"></div>
+      <div class="field"><label for="e_g">Two-qubit gates</label><input id="e_g" type="number" min="0" value="3500"></div>
+      <div class="field"><label for="e_c">Σ|cᵢ|</label><input id="e_c" type="number" min="0" value="0"></div>
+      <div class="field"><label for="e_p">Precision ε</label><input id="e_p" type="number" step="0.0001" value="0.001"></div>
+      <div class="field"><label for="e_s">Samples needed</label><input id="e_s" type="number" value="3000000"></div>
+      <div class="field"><label for="e_b">Shot budget</label><input id="e_b" type="number" value="10000000"></div>
+      <div class="field"><label for="e_q">Queue (min)</label><input id="e_q" type="number" value="60"></div>
+      <div class="field"><label for="e_d">Deadline (min)</label><input id="e_d" type="number" value="480"></div>
+    </div>
+    <div class="btns" style="margin-top:10px">
+      <label class="check"><input type="checkbox" id="e_le"> low entanglement (R3)</label>
+      <label class="check"><input type="checkbox" id="e_cm"> classical meets target (R4)</label>
+    </div>
+    <div class="verdict" id="e_verdict"></div>
+    <div class="out" id="e_out"></div>
+    <div class="trace" id="e_trace" style="margin-top:12px"></div>
+  </div>
+  <div class="tbl"><table>
+    <tr><th>Preset</th><th>Decided by</th><th>Lesson</th></tr>
+    <tr><td>h2_vqe (4 q)</td><td>R2 → classical</td><td>Textbook quantum chemistry demos are trivially simulable</td></tr>
+    <tr><td>maxcut20</td><td>R2 → classical</td><td>Even brute force over 2²⁰ cuts is instant</td></tr>
+    <tr><td>maxcut120</td><td>R4 → classical</td><td>Too big to simulate, but classical heuristics are strong. Untick R4 and it becomes hybrid</td></tr>
+    <tr><td>fes_sqd</td><td>R9 → hybrid</td><td>SQD tolerates F ≈ 5×10⁻⁴</td></tr>
+    <tr><td>fes_vqe</td><td>R6 → redesign</td><td>Same circuit, different algorithm, opposite decision</td></tr>
+    <tr><td>lin_solve</td><td>R1 → classical</td><td>The control case: ordinary work must never go to a QPU</td></tr>
+    <tr><td>deep_random</td><td>R6 → redesign</td><td>20,000 gates gives F ≈ 2×10⁻¹⁹: fits on the chip, useless in practice</td></tr>
+  </table></div>
+</section>
+
+<section class="part" id="p1-code">
+  <h2>Profiler, workloads and baselines</h2>
+  <h3>Workloads (<code>workloads.py</code>)</h3>
+  <ul>
+    <li><strong>Max-Cut</strong>: random 3-regular graph (networkx), cost Hamiltonian Σ Z_i Z_j over edges, QAOA circuit from <code>qaoa_ansatz</code>. Cut value = (|E| − ⟨H⟩) / 2, so minimising H maximises the cut.</li>
+    <li><strong>VQE</strong>: <code>efficient_su2</code> ansatz with configurable qubits, layers and entanglement (linear, circular, full), on a <strong>synthetic</strong> Hamiltonian: seeded random 1–2-body Pauli terms. It is deliberately named <code>synthetic_hamiltonian</code>, and no molecular coefficients are ever typed from memory. The first version used full-weight random Pauli strings, which gave a landscape so rugged that SPSA could not optimise it even without noise; bounded weight is closer to physical models.</li>
+    <li><strong>Random circuits</strong>: <code>qiskit.circuit.random.random_circuit</code> with up to 2-qubit operands, a stress test for routing and noise.</li>
+  </ul>
+  <h3>Profiler (<code>profiler.py</code>)</h3>
+  <p>Builds the workload, transpiles at <code>optimization_level=3</code> for the target backend, and fills the circuit fields: logical qubits, transpiled depth, transpiled two-qubit gates, Σ|c|, and qubit-wise measurement groups.</p>
+  <h3>Baselines (<code>baselines.py</code>)</h3>
+  <p>Small instances (≤ 8-qubit VQE, ≤ 12-node Max-Cut) run two ways:</p>
+  <ul>
+    <li><strong>classical</strong>: exact diagonalisation with numpy for VQE; brute force over 2^(n−1) cuts for Max-Cut (node n−1 fixed by symmetry).</li>
+    <li><strong>hybrid</strong>: calibrated SPSA, circuits transpiled to FakeFez, run on <code>AerSimulator.from_backend(FakeFez())</code> through <code>BackendEstimatorV2</code> / <code>BackendSamplerV2</code>. A <code>QPUMeter</code> wrapper counts round trips and times the simulated QPU calls, so the <strong>projected runtime</strong> replaces simulation time with estimated QPU time (shots ÷ throughput).</li>
+  </ul>
+  <p>Each run appends rows to <code>logs/decisions.csv</code> with every profile field, the rule decision, runtime, estimated energy (power assumptions in <code>rules.yaml</code>), QPU time, round trips, shots, error and success. Rows carry a run ID and a mode, so reports never mix a quick run with a full one.</p>
+  <h3>Results (full run, 7 workloads)</h3>
+  <div class="tbl"><table>
+    <tr><th>Metric (mean per workload)</th><th class="num">Classical-only</th><th class="num">Hybrid (always)</th><th class="num">Rule-based mapper</th></tr>
+    <tr><td>Runtime, projected (s)</td><td class="num">&lt; 0.01</td><td class="num">54.7</td><td class="num">&lt; 0.01</td></tr>
+    <tr><td>Energy, estimated (J)</td><td class="num">≈ 1</td><td class="num">1.37×10⁶</td><td class="num">≈ 1</td></tr>
+    <tr><td>Mean relative error</td><td class="num">0</td><td class="num">0.106</td><td class="num">0</td></tr>
+    <tr><td>QPU time, estimated (s)</td><td class="num">0</td><td class="num">54.6</td><td class="num">0</td></tr>
+    <tr><td>Shots</td><td class="num">0</td><td class="num">2.18×10⁵</td><td class="num">0</td></tr>
+    <tr><td>Success (error ≤ 5%)</td><td class="num">100%</td><td class="num">57%</td><td class="num">100%</td></tr>
+    <tr><td>QPU round trips</td><td class="num">0</td><td class="num">106</td><td class="num">0</td></tr>
+  </table></div>
+  <p>Hybrid QAOA found the optimal cut on all four graphs. Hybrid VQE missed by 8%, 29% and 37% at 4, 6 and 8 qubits under a capped 100-iteration budget and device noise. The rules sent all seven to classical via R2, matching the oracle every time.</p>
+  <div class="note ask"><span class="tag">If asked "so Phase 1 accuracy is 100%?"</span><p>Only because every test instance is small enough to simulate, which is the only way to get a ground-truth answer to score against. The contested decisions are at sizes we cannot simulate, which is exactly why Phase 3 needs a model of the outcome and Phase 5 needs real hardware.</p></div>
+</section>
+
+<section class="part" id="p1-demo">
+  <h2>Phase 1 demo, explained</h2>
+<pre>$ python -m hybrid_mapper demo --phase 1
+  lin_solve    <span class="cl">CLASSICAL</span> via R1   F=1         problem_class=classical, algorithm=none
+  h2_vqe       <span class="cl">CLASSICAL</span> via R2   F=0.994     4 qubits: statevector 2.38e-07 GiB fits in 16 GiB
+  maxcut120    <span class="cl">CLASSICAL</span> via R4   F=0.165     a classical method already meets the precision target
+  fes_sqd      <span class="ok">HYBRID   </span> via R9   F=0.000535  all checks passed: run sqd as hybrid workflow on heron_r3
+  fes_vqe      <span class="bad">REDESIGN </span> via R6   F=0.000535  F=0.000535 &lt; F_min[expect]=0.05
+  deep_random  <span class="bad">REDESIGN </span> via R6   F=2.02e-19  F=2.02e-19 &lt; F_min[sample]=0.01
+
+  Raise F_min[recover] from 1e-4 to 1e-3:
+  fes_sqd      <span class="bad">REDESIGN </span> via R6   F=0.000535  F=0.000535 &lt; F_min[recover]=0.001</pre>
+  <ol>
+    <li><strong>Read each line left to right</strong>: preset, route, the rule that fired, the estimated fidelity, the rule's own one-line reason.</li>
+    <li><strong>Point at fes_sqd vs fes_vqe.</strong> Same circuit, same F. SQD's classical recovery tolerates the noise; VQE's mitigation would need about 10¹⁶ shots.</li>
+    <li><strong>The last line</strong> shows that decisions come from configuration, not code: change one number in <code>rules.yaml</code> and the decision flips. Thresholds are hypotheses you can test.</li>
+    <li>For the full trace of every rule checked, run <code>decide --preset fes_sqd</code>.</li>
+  </ol>
+</section>
+
+<!-- ================================================================ PHASE 2 -->
+<section class="part" id="p2-why">
+  <p class="part-label">Phase 2 · Resource prediction</p>
+  <h2>Why predict when you can transpile?</h2>
+  <ul>
+    <li><strong>Speed.</strong> Transpiling takes a median 0.7 s per task in our sweep, and up to 30 s. Phase 4 will score many candidate partitions per application; that needs estimates in milliseconds.</li>
+    <li><strong>Before the circuit exists.</strong> Predicting from problem-level fields (graph size, ansatz layers, Hamiltonian terms) lets the framework reject hopeless options without building them.</li>
+    <li><strong>Some numbers cannot be computed at all.</strong> Runtime, energy and achieved error must be learned from execution logs.</li>
+  </ul>
+</section>
+
+<section class="part" id="p2-models">
+  <h2>Data and models</h2>
+  <h3>The dataset (<code>dataset.py</code> → <code>data/resources.csv</code>)</h3>
+  <p>608 rows: Max-Cut/QAOA (p = 1–3, two graph seeds), EfficientSU2 VQE (linear, circular and full entanglement, 1–4 layers) and random circuits (depth 5/10/20), from 6 to 120 qubits, each transpiled for both backends. Features are problem-level: family, backend, entanglement, n, reps, edges, Pauli terms, Σ|c| and the analytic count. Labels are the exact transpiled two-qubit gates, depth and measurement groups. Transpiles run in forked worker processes with a hard 60-second timeout, so one pathological layout cannot stall the sweep. Labels cost no QPU time.</p>
+  <h3>Three predictors per target</h3>
+  <div class="tbl"><table>
+    <tr><th>Model</th><th>Two-qubit gates</th><th>Behaviour</th></tr>
+    <tr><td><code>analytic</code></td><td>2·p·|E| (QAOA), reps × pairs (EfficientSU2: linear n−1, circular n, full n(n−1)/2), logical count for random circuits</td><td>The baseline to beat. Exact before routing, blind to SWAPs</td></tr>
+    <tr><td><code>power-law</code></td><td>Ridge on log features, one model per (family, backend, entanglement) group</td><td>Learns the routing overhead as an exponent; extrapolates</td></tr>
+    <tr><td><code>gbt</code></td><td>Histogram gradient boosting on all features, log target</td><td>Strong in range, flat beyond it</td></tr>
+  </table></div>
+  <p>A test checks that every analytic formula equals the gate count of the unrouted circuit, so the baseline is exact for what it claims to count.</p>
+</section>
+
+<section class="part" id="p2-results">
+  <h2>Phase 2 results</h2>
+  <p>The headline test is extrapolation: train on ≤ 40 qubits, predict 50–120.</p>
+  <div class="tbl"><table>
+    <tr><th>Target (extrapolation, MAPE)</th><th class="num">analytic</th><th class="num">power-law</th><th class="num">gbt</th></tr>
+    <tr><td>Two-qubit gates</td><td class="num">51%</td><td class="num best">14.5%</td><td class="num">41%</td></tr>
+    <tr><td>Depth</td><td class="num">n/a</td><td class="num best">19%</td><td class="num">37%</td></tr>
+    <tr><td>Measurement groups</td><td class="num">no grouping</td><td class="num best">1.5%</td><td class="num">3.7%</td></tr>
+  </table></div>
+  <div class="tbl"><table>
+    <tr><th>Predicted fields fed to the Phase 1 rules (extrapolation)</th><th class="num">analytic</th><th class="num">power-law</th><th class="num">gbt</th></tr>
+    <tr><td>Same decision as with exact transpiled fields</td><td class="num">69%</td><td class="num best">95.8%</td><td class="num">90%</td></tr>
+    <tr><td>Median error in log₁₀ F</td><td class="num">0.79</td><td class="num best">0.14</td><td class="num">0.27</td></tr>
+    <tr><td>Time per task</td><td class="num" colspan="3">≈ 2 ms predicted vs ≈ 1.5–2.5 s exact transpile</td></tr>
+  </table></div>
+  <ul>
+    <li><strong>The power-law beats the analytic baseline on every target.</strong> It learns the SWAP overhead that 2·p·|E| misses.</li>
+    <li><strong>Trees are as good in range</strong> (98.7% decision agreement on the random split for both), but fall behind on larger sizes. That is the textbook tree failure mode, and the same lesson returns in Phase 3.</li>
+    <li><strong>Execution outcomes</strong> (runtime, energy, error) are fitted leave-one-out on only 7 hybrid runs. The power-law beats a mean predictor (runtime MAE 11.7 s vs 36.8 s), but n = 7 means this only shows the pipeline works.</li>
+  </ul>
+</section>
+
+<section class="part" id="p2-demo">
+  <h2>Phase 2 demo, explained</h2>
+<pre>$ python -m hybrid_mapper demo --phase 2
+  Max-Cut 80 nodes, p=2 on nighthawk_r2  analytic 2p|E| = 480
+    predicted   1465 gates -> <span class="ok">HYBRID  </span> (  3.1 ms)
+    exact       1519 gates -> <span class="ok">HYBRID  </span> (  502 ms transpile)
+  Max-Cut 80 nodes, p=2 on heron_r3      analytic 2p|E| = 480
+    predicted   2320 gates -> <span class="bad">REDESIGN</span> (  3.5 ms)
+    exact       2448 gates -> <span class="bad">REDESIGN</span> (  145 ms transpile)</pre>
+  <ol>
+    <li>An 80-node 3-regular graph has 120 edges, so the logical count is 2 × 2 × 120 = <strong>480</strong> on both machines.</li>
+    <li>After routing, Nighthawk's square grid needs about 1,500 two-qubit gates and Heron's heavy-hex about 2,450, roughly 60% more, because heavy-hex has fewer neighbours per qubit.</li>
+    <li>At Nighthawk's EPLG, 1,519 gates gives F ≈ 0.010, just above R6's 0.01, so the task is HYBRID. On Heron F ≈ 0.005, so it is REDESIGN. The same problem is feasible on one QPU and not the other, and the analytic count cannot tell them apart.</li>
+    <li>The prediction agrees with the exact decision in both cases, in a few milliseconds.</li>
+  </ol>
+  <div class="note say"><span class="tag">Say this</span><p>Phase 2 needs no QPU access at all: resource labels come free from the transpiler, so we can generate as many examples as we like and test on sizes we never trained on.</p></div>
+</section>
+
+<!-- ================================================================ PHASE 3 -->
+<section class="part" id="p3-what">
+  <p class="part-label">Phase 3 · AI task allocation</p>
+  <h2>What "AI allocation" means here</h2>
+  <p>The proposal: <em>use ML predictions to replace or augment fixed resource-mapping decisions</em>. Two readings, both built:</p>
+  <ul>
+    <li><strong>Augment</strong>: keep the rules, but feed them Phase 2 predictions instead of exact transpiled fields, or tune their thresholds from data.</li>
+    <li><strong>Replace</strong>: learn the decision itself from outcomes, with a classifier.</li>
+  </ul>
+  <p>Judging either needs the right answer for tasks too large to simulate, and that needs execution feedback from real hardware, which is Phase 5. So Phase 3 is a <strong>simulation study</strong>. A ground-truth model (<code>environment.py</code>) says what would actually happen, using effects from the literature that the Phase 1 rules ignore. The learned allocators see only information available before execution, and meet the hidden effects only through training labels.</p>
+  <div class="note warn"><span class="tag">Say this before anyone asks</span><p>The oracle is a model, not hardware. What Phase 3 shows is that an allocator can recover effects like tensor-network simulability and the shots-for-fidelity trade-off from features known before execution, and that it adapts when fed new outcomes. It does not show that it beats real hardware. The same code retrains unchanged on real outcomes once Phase 5 produces them.</p></div>
+</section>
+
+<section class="part" id="p3-truth">
+  <h2>The ground-truth model</h2>
+  <p>For every task it computes the cheapest classical method and the hybrid option, each with feasibility, time, energy and QPU time, and labels the task with the cheaper feasible option, or REDESIGN if neither works. All assumptions live in <code>config/environment.yaml</code>; the rules never read that file.</p>
+  <div class="tbl"><table>
+    <tr><th>Effect</th><th>The rules assume</th><th>The ground truth knows</th><th>Source</th></tr>
+    <tr><td>Tensor networks</td><td>&gt; 30 qubits cannot be simulated</td><td>Exact MPS when χ = 2^ebits ≤ 4,096 and memory fits</td><td>Vidal 2003</td></tr>
+    <tr><td>Classical heuristics</td><td><code>classical_meets_target</code> is a hand-set flag</td><td>Max-Cut heuristic achieves 0.878; QAOA worst case 0.692 / 0.756 / 0.792 for p = 1/2/3, and noise pulls it toward 0.5</td><td>Goemans–Williamson 1995; Farhi 2014; Wurtz &amp; Love 2021</td></tr>
+    <tr><td>Classical hardware</td><td>16 GiB workstation</td><td>512 GiB node: statevector up to 35 qubits; bandwidth-bound time</td><td>Assumption, in config</td></tr>
+    <tr><td>Readout error</td><td>Ignored</td><td>F × (1 − 0.0076)ⁿ on sampling tasks; expectation values assume readout mitigation</td><td>FakeFez median; van den Berg 2022</td></tr>
+    <tr><td>Shots-for-fidelity</td><td>Hard F_min cut-off</td><td>A sampling task needs about 1,000 error-free samples: shots = max(N, 1000/F), allowed if within budget and deadline</td><td>Assumption, in config</td></tr>
+    <tr><td>Mitigation limit</td><td>F ≥ 0.05 for VQE</td><td>Feasible while shots = (Σ|c|/ε)²/F² fit the budget, down to a floor of F = 10⁻³</td><td>Temme 2017 (1/F² scaling)</td></tr>
+    <tr><td>Queue</td><td>Known exactly</td><td>Realised wait = nominal × log-normal(0, 0.6)</td><td>Assumption, in config</td></tr>
+  </table></div>
+  <h3>The cost and the label</h3>
+  <div class="eq">J = time_s + 0.001 · energy_J + 10 · qpu_s          label = argmin J over feasible options, else REDESIGN</div>
+  <p>Classical energy assumes a 1 kW node; QPU energy attributes a 25 kW system draw by share of QPU time, because the cryostat and electronics run whether or not your job does. Every classical method also pays a 1-second job overhead.</p>
+  <h3>The tasks (<code>tasks</code> → <code>data/tasks.csv</code>)</h3>
+  <p>Each of the 608 transpiled workloads is paired with 4 sampled operating conditions: precision target, Max-Cut ratio target, deadline, nominal queue, shot budget and samples needed. That gives 2,432 tasks, so the same circuit appears under easy and hard conditions.</p>
+  <div class="tbl"><table>
+    <tr><th>Family</th><th class="num">CLASSICAL</th><th class="num">HYBRID</th><th class="num">REDESIGN</th></tr>
+    <tr><td>Max-Cut</td><td class="num">506</td><td class="num">0</td><td class="num">262</td></tr>
+    <tr><td>Random circuits</td><td class="num">287</td><td class="num">266</td><td class="num">215</td></tr>
+    <tr><td>VQE</td><td class="num">864</td><td class="num">0</td><td class="num">32</td></tr>
+    <tr><td><strong>All</strong></td><td class="num">1,657 (68%)</td><td class="num">266 (11%)</td><td class="num">509 (21%)</td></tr>
+  </table></div>
+  <p>Read this table as a finding. Under worst-case guarantees, Max-Cut never needs the QPU: either the classical heuristic meets the target, or neither side can guarantee a 0.9 ratio. Every HYBRID label comes from deep random-circuit sampling, the one family where classical simulation genuinely runs out of road. That matches the intuition behind random-circuit sampling experiments.</p>
+</section>
+
+<section class="part" id="p3-explorer">
+  <h2>Ground-truth explorer</h2>
+  <p>The Phase 3 ground truth and the Phase 1 rules, side by side on the same task, ported from <code>environment.py</code> and <code>rules.py</code>. The presets are the demo's examples plus one where the AI also gets it wrong.</p>
+  <div class="panel" id="explorer">
+    <div class="btns" id="x_presets"></div>
+    <div class="grid">
+      <div class="field"><label for="x_fam">Family</label><select id="x_fam"><option value="vqe">VQE (expect)</option><option value="maxcut">Max-Cut QAOA (sample)</option><option value="random">Random circuit (sample)</option></select></div>
+      <div class="field"><label for="x_be">Backend</label><select id="x_be"><option value="heron_r3">heron_r3</option><option value="nighthawk_r2">nighthawk_r2</option></select></div>
+      <div class="field"><label for="x_n">Qubits</label><input id="x_n" type="number" min="2" value="100"></div>
+      <div class="field"><label for="x_g">Two-qubit gates (exact)</label><input id="x_g" type="number" min="0" value="198"></div>
+      <div class="field"><label for="x_e">Entanglement bound (ebits)</label><input id="x_e" type="number" min="0" value="2"></div>
+      <div class="field"><label for="x_p">QAOA p</label><input id="x_p" type="number" min="1" max="3" value="1"></div>
+      <div class="field"><label for="x_c">Σ|cᵢ| (VQE)</label><input id="x_c" type="number" min="0" value="292"></div>
+      <div class="field"><label for="x_pr">Precision ε</label><input id="x_pr" type="number" step="0.001" value="0.01"></div>
+      <div class="field"><label for="x_rt">Max-Cut ratio target</label><input id="x_rt" type="number" step="0.01" value="0.85"></div>
+      <div class="field"><label for="x_s">Samples needed</label><input id="x_s" type="number" value="100000"></div>
+      <div class="field"><label for="x_b">Shot budget</label><input id="x_b" type="number" value="10000000"></div>
+      <div class="field"><label for="x_q">Queue (min)</label><input id="x_q" type="number" value="30"></div>
+      <div class="field"><label for="x_d">Deadline (min)</label><input id="x_d" type="number" value="480"></div>
+    </div>
+    <div class="verdict" id="x_verdict"></div>
+    <div class="two">
+      <div class="side"><h5>Classical option</h5><p id="x_cl"></p></div>
+      <div class="side"><h5>Hybrid option</h5><p id="x_hy"></p></div>
+    </div>
+    <p class="panel-sub" id="x_note" style="margin:12px 0 0"></p>
+  </div>
+</section>
+
+<section class="part" id="p3-learn">
+  <h2>Allocators and metrics</h2>
+  <div class="tbl"><table>
+    <tr><th>Allocator</th><th>Type</th><th>What it sees</th></tr>
+    <tr><td>Classical-only, Quantum-only</td><td>Single-platform baselines from the proposal</td><td>Nothing</td></tr>
+    <tr><td>Rules (exact transpile)</td><td>Phase 1 as built</td><td>Exact circuit fields, hand-set thresholds</td></tr>
+    <tr><td>Rules + Phase 2 predictions</td><td>Augment</td><td>Predicted fields, no transpile</td></tr>
+    <tr><td>Rules, tuned thresholds</td><td>Augment</td><td>Grid search over statevector memory and F_min[expect], F_min[sample] (100 combinations) minimising training regret</td></tr>
+    <tr><td>AI: decision tree</td><td>Replace, interpretable</td><td>Depth 4, balanced classes, printable as if-then rules</td></tr>
+    <tr><td>AI: gradient boosting</td><td>Replace, strongest</td><td>Cost-sensitive: each training task is weighted by the regret of its most expensive wrong action</td></tr>
+  </table></div>
+  <h3>Features the learned allocators get</h3>
+  <p>Problem-level: n, reps, edges, Pauli terms, Σ|c|, analytic count, one-hot family, backend and entanglement. Conditions: precision, ratio target, deadline, nominal queue, budget, samples. Phase 2 predictions: gates, depth, and derived predicted log₁₀ F, log₁₀ shots, (queue + QPU time)/deadline, and one domain feature, <strong>log₁₀(budget × F)</strong>: the number of error-free samples the budget buys. Hidden quantities (entanglement bound, realised queue, readout factor) are never features.</p>
+  <div class="note"><span class="tag">Why the one engineered feature</span><p>"Needs about 1,000/F shots against a budget" is a sum of two logarithms. Trees split one feature at a time, so they approximate that diagonal boundary badly, especially outside the training range. Giving the model the physically meaningful combination is standard domain feature engineering, and you should say it was added deliberately.</p></div>
+  <h3>How a decision is scored</h3>
+  <div class="eq">success:  regret = J(chosen) − J(oracle)          failure:  regret = J(wasted attempt) + penalty (3,600)</div>
+  <p>A failure is any decision that yields no accepted result: a run that misses its target, budget or deadline, or declining a task that was feasible. We also report decision accuracy, macro-F1, success rate, runtime, energy, QPU time, shots, <strong>unnecessary QPU use</strong> (QPU chosen when a cheaper classical option worked) and communication overhead (QPU jobs per task). Those are the proposal's §10 rows.</p>
+</section>
+
+<section class="part" id="p3-results">
+  <h2>Phase 3 results</h2>
+  <p>Held-out evaluation on 30% of workloads never seen in training (732 tasks). This fills in the proposal's evaluation table, in simulation.</p>
+  <div class="chart" id="ch_alloc" role="img" aria-label="Decision accuracy and regret by allocator"></div>
+  <div class="tbl"><table>
+    <tr><th>Allocator</th><th class="num">Accuracy</th><th class="num">Macro-F1</th><th class="num">Success</th><th class="num">Mean regret</th><th class="num">QPU s / task</th><th class="num">Unneeded QPU</th></tr>
+    <tr><td>Classical-only</td><td class="num">67.3%</td><td class="num">0.27</td><td class="num">67.3%</td><td class="num">1,176</td><td class="num">0</td><td class="num">0%</td></tr>
+    <tr><td>Quantum-only</td><td class="num">12.7%</td><td class="num">0.08</td><td class="num">26.4%</td><td class="num">75,746</td><td class="num">1,772</td><td class="num">67%</td></tr>
+    <tr><td>Rules (exact transpile)</td><td class="num">54.6%</td><td class="num">0.50</td><td class="num">56.0%</td><td class="num">2,855</td><td class="num">28.3</td><td class="num">6.0%</td></tr>
+    <tr><td>Rules + Phase 2 predictions</td><td class="num">54.5%</td><td class="num">0.50</td><td class="num">55.9%</td><td class="num">2,860</td><td class="num">28.3</td><td class="num">6.0%</td></tr>
+    <tr><td>Rules, tuned thresholds</td><td class="num">57.5%</td><td class="num">0.51</td><td class="num">58.5%</td><td class="num">2,460</td><td class="num">22.6</td><td class="num">3.6%</td></tr>
+    <tr><td>AI: decision tree</td><td class="num">96.7%</td><td class="num">0.93</td><td class="num">96.7%</td><td class="num best">285</td><td class="num">23.4</td><td class="num">0%</td></tr>
+    <tr><td>AI: gradient boosting</td><td class="num best">97.1%</td><td class="num best">0.94</td><td class="num best">97.1%</td><td class="num">420</td><td class="num">23.8</td><td class="num">0%</td></tr>
+    <tr><td>Oracle</td><td class="num">100%</td><td class="num">1</td><td class="num">100%</td><td class="num">0</td><td class="num">25.2</td><td class="num">0%</td></tr>
+  </table></div>
+  <h3>What to take from it</h3>
+  <ul>
+    <li><strong>Replace beats augment.</strong> Predicted fields leave the rules unchanged (54.5%) and tuning the thresholds adds 3 points. No threshold can express "weakly entangled circuits are classically easy".</li>
+    <li><strong>Classical-only is a strong baseline.</strong> Its regret is lower than the rules', because classical failures are cheap and quantum failures are not. That matches the proposal's instinct that classical should be the default.</li>
+    <li><strong>The AI never chose the QPU when classical would do</strong> (0% unnecessary QPU use) and used less QPU time than the oracle needed on average.</li>
+  </ul>
+  <h3>Why the rules disagree with the ground truth</h3>
+  <div class="tbl"><table>
+    <tr><th>Rules say</th><th>Truth</th><th>Why</th><th class="num">Tasks</th></tr>
+    <tr><td>REDESIGN</td><td>CLASSICAL</td><td>Weakly entangled: exact MPS simulation</td><td class="num">140</td></tr>
+    <tr><td>CLASSICAL</td><td>REDESIGN</td><td>Classical heuristic misses a 0.9 ratio target</td><td class="num">35</td></tr>
+    <tr><td>HYBRID</td><td>CLASSICAL</td><td>Classical Max-Cut heuristic is better than noisy QAOA</td><td class="num">34</td></tr>
+    <tr><td>CLASSICAL</td><td>REDESIGN</td><td>Classical route too large and too entangled (R8 fallback fails)</td><td class="num">30</td></tr>
+    <tr><td>REDESIGN</td><td>CLASSICAL</td><td>Classical Max-Cut heuristic is better</td><td class="num">27</td></tr>
+    <tr><td>REDESIGN</td><td>HYBRID</td><td>Low-F sampling rescued by extra shots</td><td class="num">20</td></tr>
+    <tr><td>HYBRID</td><td>REDESIGN</td><td>Noisy QAOA misses the ratio target</td><td class="num">19</td></tr>
+  </table></div>
+  <p>The gradient-boosting allocator's remaining 21 mistakes on this split: 17 low-F sampling tasks it wrongly declined (a boundary it learns imperfectly) and 4 hybrid runs that miss the deadline because the realised queue exceeded the nominal one, which it cannot see.</p>
+  <h3>The learned tree, readable</h3>
+<pre>|--- sum_abs_coeffs &lt;= 4.5                     <span class="dim"># i.e. a random circuit (no Hamiltonian)</span>
+|   |--- n_qubits &lt;= 33                       <span class="dim">#   small enough for statevector</span>
+|   |   |--- class: <span class="cl">CLASSICAL</span>
+|   |--- n_qubits &gt;  33
+|   |   |--- good_samples_affordable &lt;= 3.84   <span class="dim">#   budget buys &lt; ~7,000 clean samples</span>
+|   |   |   |--- class: <span class="bad">REDESIGN</span>
+|   |   |--- good_samples_affordable &gt;  3.84
+|   |   |   |--- qpu_min_over_deadline &lt;= 1.0  <span class="dim">#   fits the deadline</span>
+|   |   |   |   |--- class: <span class="ok">HYBRID</span>
+|   |   |   |--- else: class: <span class="bad">REDESIGN</span>
+|--- sum_abs_coeffs &gt;  4.5                     <span class="dim"># VQE or Max-Cut</span>
+|   |--- maxcut_ratio_target &lt;= 0.875          <span class="dim">#   GW's 0.878 can meet it</span>
+|   |   |--- (almost always) class: <span class="cl">CLASSICAL</span>
+|   |--- maxcut_ratio_target &gt;  0.875
+|   |   |--- entanglement=none (Max-Cut): <span class="bad">REDESIGN</span>; small VQE: <span class="cl">CLASSICAL</span></pre>
+  <p>(Condensed from <code>results/phase3_allocation.md</code>; comments added.) Two things worth pointing out. The tree rediscovered the 33–35-qubit statevector line and the 0.878 Goemans–Williamson threshold from data alone. And it uses <code>sum_abs_coeffs ≤ 4.5</code> as a proxy for "is a random circuit", which is correct here but is the kind of shortcut a model takes. A professor may ask exactly this: a learned model finds proxies, so you check them.</p>
+  <h3>What the boosting model relies on (permutation importance)</h3>
+  <div class="tbl"><table>
+    <tr><th>Feature</th><th class="num">Macro-F1 drop when shuffled</th></tr>
+    <tr><td>n_qubits</td><td class="num">0.21</td></tr>
+    <tr><td>reps</td><td class="num">0.20</td></tr>
+    <tr><td>(queue + predicted QPU time) / deadline</td><td class="num">0.14</td></tr>
+    <tr><td>Max-Cut ratio target</td><td class="num">0.13</td></tr>
+    <tr><td>n_edges</td><td class="num">0.06</td></tr>
+    <tr><td>log₁₀(budget × predicted F)</td><td class="num">0.03</td></tr>
+  </table></div>
+  <p>reps matters because it sets the entanglement bound of the VQE ansatz (χ ≤ 2^reps for linear), which is what decides MPS simulability.</p>
+</section>
+
+<section class="part" id="p3-feedback">
+  <h2>Extrapolation, and why feedback matters</h2>
+  <p>Train only on ≤ 40 qubits and test on 50–120, and the picture changes:</p>
+  <div class="tbl"><table>
+    <tr><th>Extrapolation split</th><th class="num">Accuracy</th><th class="num">Mean regret</th></tr>
+    <tr><td>Classical-only</td><td class="num">55.2%</td><td class="num best">1,613</td></tr>
+    <tr><td>Rules (exact transpile)</td><td class="num">33.2%</td><td class="num">6,158</td></tr>
+    <tr><td>Rules, tuned thresholds</td><td class="num">33.3%</td><td class="num">7,574</td></tr>
+    <tr><td>AI: decision tree</td><td class="num">80.1%</td><td class="num">9,149</td></tr>
+    <tr><td>AI: gradient boosting</td><td class="num best">86.3%</td><td class="num">5,816</td></tr>
+  </table></div>
+  <p>The AI is still far more often right, but its mistakes are expensive: large sampling jobs sent to the QPU whose shot needs exceed the budget. The cause is distribution shift. Below 40 qubits, random circuits up to 35 qubits are all simulated classically, so the boundary between HYBRID and REDESIGN is learned from only the 36- and 40-qubit examples. Thresholds tuned on small tasks generalise even worse.</p>
+  <h3>The feedback curve (Function 6 in miniature)</h3>
+  <p>Start from the extrapolation split. Move a share of the large workloads into training as "execution feedback", and score on a fixed 70% of large workloads that are never fed back.</p>
+  <div class="chart" id="ch_fb" role="img" aria-label="Mean regret against share of large workloads fed back"></div>
+  <div class="note win"><span class="tag">The result to lead with</span><p>Feeding back 10% of the large workloads cuts gradient-boosting regret from 5,753 to 2,268. At 30% it reaches 397, below classical-only (1,613) and far below the static rules (5,340), which cannot learn at all. That is the proposal's research hypothesis, that adaptive allocation beats static rules by learning from observed behaviour, demonstrated in simulation.</p></div>
+</section>
+
+<section class="part" id="p3-demo">
+  <h2>Phase 3 demo, explained</h2>
+  <p><code>demo --phase 3</code> runs three showcase tasks through rules, AI and ground truth, then prints the held-out table. Each example illustrates one mechanism.</p>
+  <h4 class="sub">Example 1 · weakly entangled 100-qubit VQE</h4>
+<pre>Phase 2 prediction: 198 two-qubit gates, depth 316, F=0.653, shots 2e+09
+Phase 1 rules (on predicted fields):  <span class="bad">REDESIGN</span> via R7: shots 2e+09 &gt; budget 1e+07
+Phase 3 AI (gradient boosting):       <span class="cl">CLASSICAL</span>  P(CLASSICAL)=1.00
+GROUND TRUTH (exact transpile: 198 two-qubit gates; entanglement bound 2 ebits; nominal queue)
+  classical: feasible  (mps in 1 s)
+  hybrid:    infeasible  (shots 2e+09 &gt; budget 1e+07)
+  oracle:    <span class="cl">CLASSICAL</span></pre>
+  <p>The rules see 100 qubits (past R2) and a VQE shot count of 2×10⁹, so they redesign. A linear ansatz with 2 layers puts at most 2 ebits across any cut, so an MPS with χ = 4 simulates it exactly in about a second. The AI learned from reps and entanglement that such tasks are classical.</p>
+  <h4 class="sub">Example 2 · 100-node Max-Cut on Nighthawk</h4>
+<pre>Phase 1 rules (on predicted fields):  <span class="ok">HYBRID</span> via R9: all checks passed
+Phase 3 AI (gradient boosting):       <span class="cl">CLASSICAL</span>
+  classical: feasible  (heuristic in 1.01 s)
+  hybrid:    infeasible  (QAOA ratio 0.505 &lt; target 0.85)</pre>
+  <p>F ≈ 0.06 passes R6, so the rules approve QAOA. But the noisy expected ratio is F × 0.692 + (1 − F) × 0.5 ≈ 0.505, well under the 0.85 target, while Goemans–Williamson guarantees 0.878. In the rules, R4 needed a human to tick "classical meets target". The AI learned it.</p>
+  <h4 class="sub">Example 3 · deep 50-qubit sampling circuit</h4>
+<pre>Phase 2 prediction: 4109 two-qubit gates, F=0.000144
+Phase 1 rules:  <span class="bad">REDESIGN</span> via R6: F=0.000144 &lt; F_min[sample]=0.01
+Phase 3 AI:     <span class="ok">HYBRID</span>, because:
+    n_qubits = 50 &gt; 33
+    pred_log10_good_samples_affordable = 4.16 &gt; 3.77
+  classical: infeasible  (too large and too entangled for statevector or MPS)
+  hybrid:    feasible  (F=0.00021, 4.66e+06 shots, 49 min)</pre>
+  <p>R6 is a hard cut-off. With a 10⁸-shot budget, F ≈ 2×10⁻⁴ still buys about 20,000 error-free samples, so taking 4.7 million shots works and finishes in 49 minutes. The tree's printed path shows the decision hinging on exactly that quantity.</p>
+  <h4 class="sub">An honest failure to show if asked</h4>
+<pre>$ python -m hybrid_mapper allocate --workload random --size 60 --reps 20 --backend nighthawk_r2 \
+      --budget 1e8 --samples 1e4 --compare
+Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
+  hybrid:    feasible  (F=2.8e-05, 3.63e+07 shots, 36 min)
+  oracle:    <span class="ok">HYBRID</span></pre>
+  <p>On the boundary the budget buys about 2,800 clean samples against 1,000 needed. The AI does not know about readout error and is slightly off on F, so it declines. Showing a failure you understand is more convincing than a perfect demo.</p>
+</section>
+
+<!-- ================================================================ DEFENDING -->
+<section class="part" id="talk">
+  <p class="part-label">Defending it</p>
+  <h2>Talk plan (about 15 minutes)</h2>
+  <div class="tbl"><table>
+    <tr><th>Slide</th><th>Content</th><th class="num">Time</th></tr>
+    <tr><td>1 · Thesis</td><td>"A triage system that decides where each part of a computation should run."</td><td class="num">0:30</td></tr>
+    <tr><td>2 · Why hybrid</td><td>HPC's exponential wall vs QPU limits: qubits, noise, connectivity, shots. Neither works alone. Cite QCSC.</td><td class="num">1:30</td></tr>
+    <tr><td>3 · The gap</td><td>The split is decided by hand today; fixed heuristics break when size, precision or noise change.</td><td class="num">1:00</td></tr>
+    <tr><td>4 · Pipeline</td><td>The six functions, the Task Profile's three tiers.</td><td class="num">1:30</td></tr>
+    <tr><td>5 · Classical is the default</td><td>Statevector memory, MPS, Goemans–Williamson. "Small ≠ quantum, and large ≠ quantum."</td><td class="num">1:30</td></tr>
+    <tr><td>6 · Phase 1</td><td>Rules table, algorithm-aware F_min, live demo: fes_sqd vs fes_vqe.</td><td class="num">2:00</td></tr>
+    <tr><td>7 · Phase 2</td><td>Extrapolation table; Max-Cut 80 on Nighthawk vs Heron.</td><td class="num">2:00</td></tr>
+    <tr><td>8 · Phase 3 setup</td><td>Simulation study; the ground-truth effects; replace vs augment.</td><td class="num">1:30</td></tr>
+    <tr><td>9 · Phase 3 results</td><td>97% vs 55%; disagreement causes; the readable tree.</td><td class="num">1:30</td></tr>
+    <tr><td>10 · Feedback curve</td><td>Extrapolation failure, then regret falling with feedback.</td><td class="num">1:00</td></tr>
+    <tr><td>11 · Limits and next</td><td>Simulated oracle, crude fidelity model, Phases 4–6, ask for QPU access.</td><td class="num">1:00</td></tr>
+  </table></div>
+</section>
+
+<section class="part" id="qa">
+  <h2>Questions your professor is likely to ask</h2>
+  <p>Try answering each out loud before opening it.</p>
+
+  <h3>Concept</h3>
+  <details class="qa"><summary>Phase 1 is just if-else statements. Where is the AI?</summary><div class="a"><p>Deliberately, Phase 1 is the baseline the AI must beat (a column in the proposal's evaluation table) and the generator of labelled data. Every threshold in it is a hypothesis. Phase 2 learns resource predictions and Phase 3 learns the decision itself; on held-out workloads the learned allocator reaches 97% decision accuracy against 55% for the rules. Without the rules we could not show the AI adds anything.</p></div></details>
+  <details class="qa"><summary>Why would you ever not use the quantum computer?</summary><div class="a"><p>Because most tasks are cheaper, faster and more accurate classically. Small circuits fit in memory and simulate exactly with no noise and no queue. Weakly entangled circuits simulate as MPS at any width. Some problems, like Max-Cut, have classical algorithms with better guarantees than low-depth QAOA. In our Phase 3 tasks, 68% are best run classically. The framework's value is saying no quickly, with a reason.</p></div></details>
+  <details class="qa"><summary>Will a QPU ever actually win in your experiments?</summary><div class="a"><p>In the simulation study, 11% of tasks are best run as hybrid, all of them deep random-circuit sampling where classical simulation runs out. For chemistry and optimisation at these sizes, classical wins. That is a finding, not a failure. We make no quantum-advantage claim; the framework is built to recognise the narrow window when it opens and to adapt as hardware improves.</p></div></details>
+  <details class="qa"><summary>How does this relate to IBM's QCSC architecture, QRMI and Slurm?</summary><div class="a"><p>They are complementary. QRMI and the Slurm plugin let a job acquire and use a QPU as a schedulable resource. They do not decide whether a task should use a QPU or how to split it; IBM's architecture leaves decomposition to the application layer. Our framework makes that decision, and its output could become the job request that QRMI and Slurm carry out.</p></div></details>
+  <details class="qa"><summary>What is new compared with existing quantum schedulers?</summary><div class="a"><p>Systems like Qonductor schedule jobs that are already destined for a QPU, trading fidelity against completion time. ML work exists on predicting QPU processing time (Xing et al. trained LightGBM on 166,143 IBM jobs). Our focus is upstream: whether each part should be quantum at all, based on problem characteristics, plus resource prediction and learning from feedback.</p></div></details>
+
+  <h3>Physics and hardware</h3>
+  <details class="qa"><summary>Isn't (1 − ε)^N too crude?</summary><div class="a"><p>Yes. It ignores single-qubit errors, readout, idling, crosstalk and leakage, so it is optimistic. It is the standard first-order estimate, and EPLG partly absorbs crosstalk because it is measured on whole layers. The Phase 3 ground truth adds readout error, and the gap between estimated and measured fidelity is a natural learning target once real runs exist.</p></div></details>
+  <details class="qa"><summary>What is EPLG and why use it instead of the two-qubit gate error?</summary><div class="a"><p>Error per layered gate comes from layer fidelity (McKay et al., 2023): randomised benchmarking on full layers of simultaneous two-qubit gates along a long qubit chain. It includes crosstalk and idling that isolated-pair benchmarks miss, and it is normalised per gate. That is what a real circuit experiences, so it is the right ε for the fidelity formula. It does depend on which chain is measured, so it is a representative figure.</p></div></details>
+  <details class="qa"><summary>How did you choose 30 qubits and F_min = 0.05?</summary><div class="a"><p>30 qubits is where statevector memory reaches 16 GiB, a typical workstation; on a 512 GiB node it moves to 35, which is what the Phase 3 ground truth assumes, and threshold tuning picked an even larger memory value. F_min = 0.05 comes from mitigation cost: overhead ≈ 1/F², so 0.05 means about 400× more shots. Both are starting values in <code>rules.yaml</code>, and the SQD example shows why one threshold for all algorithms is wrong.</p></div></details>
+  <details class="qa"><summary>Why are SQD and VQE so different on the same circuit?</summary><div class="a"><p>VQE needs an accurate expectation value; noise biases it, and mitigating that bias costs about 1/F² extra shots, which at F ≈ 5×10⁻⁴ is millions of times more. SQD only needs some correct configurations among its samples; classical configuration recovery and diagonalisation in the sampled subspace do the rest, so it tolerates very low fidelity. That is why the rules have an algorithm-aware threshold.</p></div></details>
+  <details class="qa"><summary>What happens when the problem does not fit the QPU?</summary><div class="a"><p>The proposal's Function 4 loops back to algorithm design: fewer qubits (smaller active space, fragmentation), lower depth (better ansatz, circuit cutting), or fewer measurements (grouping, lower precision). Phase 1 outputs REDESIGN with the rule's reason, so the user knows which of those to try. Automating that loop is Phase 4.</p></div></details>
+  <details class="qa"><summary>Why is the Nighthawk transpile target a grid and not the real device?</summary><div class="a"><p>There is no fake Nighthawk backend in qiskit-ibm-runtime. A 10×12 square lattice matches its published connectivity (square lattice, four neighbours), so it captures routing overhead, which is what matters for gate counts. It does not carry Nighthawk's calibration data, and the config labels it as a topology proxy.</p></div></details>
+
+  <h3>Methodology</h3>
+  <details class="qa"><summary>Isn't Phase 3 circular? You built an oracle with effects the rules ignore, then showed AI learns them.</summary><div class="a"><p>It is a simulation study, and we say so. The question it answers is narrower than "does AI beat hardware": can an allocator recover these effects from features available before execution, and does it adapt when given new outcomes? Each effect in the oracle comes from the literature (Vidal on MPS, Goemans–Williamson, published QAOA bounds, measured readout error), not invented to favour the AI. The decisive test is Phase 5, and the pipeline retrains unchanged on real outcomes.</p></div></details>
+  <details class="qa"><summary>How do you know whether a decision was correct?</summary><div class="a"><p>For small instances we run every option for real (Phase 1 baselines) and the cheapest option meeting the accuracy target is the oracle label. For large instances we use the ground-truth model. Decisions are scored by accuracy, macro-F1, success rate and regret: the extra cost over the oracle's choice, with failures charged their wasted resources plus a penalty.</p></div></details>
+  <details class="qa"><summary>Why does classical-only have lower regret than your rules?</summary><div class="a"><p>Because the costs are asymmetric. A classical attempt that fails is cheap; a QPU job that fails wastes queue time, QPU time and energy. Classical-only fails on a third of tasks, but cheaply. The rules sometimes send doomed jobs to the QPU. This supports the proposal's instinct that classical should be the default, and it is why the gradient-boosting allocator is trained cost-sensitively.</p></div></details>
+  <details class="qa"><summary>Your AI's regret is worse than classical-only on larger problems. Doesn't that sink it?</summary><div class="a"><p>It shows the limit of any model trained on one size range: trees predict flat beyond their data, and the HYBRID/REDESIGN boundary was learned from very few large examples. Its accuracy is still 86% against 33% for the rules. The feedback curve is the answer: with 10% of large workloads fed back, regret drops from 5,753 to 2,268, and at 30% to 397, below every baseline. In deployment you pair a learned allocator with a conservative default for out-of-range inputs and retrain as feedback arrives.</p></div></details>
+  <details class="qa"><summary>How did you avoid data leakage?</summary><div class="a"><p>Each circuit appears under four operating conditions, so Phase 3 splits by workload (<code>GroupShuffleSplit</code>), never by row. The Phase 2 predictor used inside each Phase 3 evaluation is trained only on that split's training workloads. Hidden quantities (entanglement bound, realised queue, readout factor) are never features.</p></div></details>
+  <details class="qa"><summary>The classes are imbalanced. How do you handle it?</summary><div class="a"><p>68% CLASSICAL, 21% REDESIGN, 11% HYBRID. We use balanced class weights, report macro-F1 and per-class confusion matrices, and weight training examples by the cost of getting them wrong (Elkan, 2001).</p></div></details>
+  <details class="qa"><summary>Why did you add a hand-made feature? Isn't the model supposed to learn?</summary><div class="a"><p>log₁₀(budget × predicted F) is the number of clean samples the budget buys. The underlying relation is a sum of logs, which axis-aligned tree splits approximate poorly, especially outside the training range. Encoding a physically meaningful quantity is standard practice, it is computed only from pre-execution information, and adding it is reported in the code and the README.</p></div></details>
+  <details class="qa"><summary>Worst-case bounds for both QAOA and Goemans–Williamson? Real instances do better.</summary><div class="a"><p>Correct, and we chose worst case on both sides for consistency: both numbers are proven guarantees we can cite (the p = 3 QAOA bound is conditional on a conjecture, which we state). Typical-instance performance of both is better. The assumption is one line in <code>environment.yaml</code>, so the sensitivity is easy to test.</p></div></details>
+  <details class="qa"><summary>How will you measure energy for QPU jobs?</summary><div class="a"><p>Classical: node power counters, for example Slurm energy accounting where supported. Quantum: attribute the system's continuous draw by share of QPU time, since the cryostat and electronics run regardless. In the repo both are explicit assumptions (1 kW node, 25 kW QPU system) in config, reported as estimates.</p></div></details>
+
+  <h3>Phase 2 specifics</h3>
+  <details class="qa"><summary>How do you estimate gate counts before running anything?</summary><div class="a"><p>Phase 1 does it exactly: build the circuit and transpile it against a fake backend that carries the real layout, at no QPU cost. Phase 2 learns to predict those counts from problem-level features, so the circuit need not be built. On problems larger than any in training, the power-law model is off by 14.5% on average and gives the same decision as the exact count 95.8% of the time.</p></div></details>
+  <details class="qa"><summary>Why does a power law beat gradient boosting?</summary><div class="a"><p>Routing overhead grows smoothly with size, so a log-linear form fits it and continues correctly past the training range. Trees are piecewise constant: beyond the largest size they saw, they predict the last leaf's value. Inside the training range the two are comparable; outside it the power law wins. Choosing a model family by its extrapolation behaviour is a real design decision.</p></div></details>
+  <details class="qa"><summary>Why not just use the analytic formula 2·p·|E|?</summary><div class="a"><p>It counts gates before routing. Routing adds SWAPs, three CNOTs each, and how many depends on topology: an 80-node Max-Cut needs about 1,500 gates on Nighthawk's grid and 2,450 on Heron's heavy-hex, against 480 logical. That difference flips the decision. The analytic baseline is off by 51% on large problems.</p></div></details>
+  <details class="qa"><summary>Where is the runtime, energy and error prediction the proposal promised?</summary><div class="a"><p>Implemented in <code>predict.outcome_models</code> and reported, but trained on only 7 simulated hybrid runs, because each label costs a full run. It beats a mean predictor, but n = 7 only shows the pipeline works. Those labels grow with every baseline run and, properly, with real executions in Phase 5. The resource predictors, trained on 608 transpiler-labelled rows, are the solid part of Phase 2.</p></div></details>
+
+  <h3>Future</h3>
+  <details class="qa"><summary>How is partitioning automated, since you use templates?</summary><div class="a"><p>Phase 1 uses one fixed split per algorithm (for SQD: QPU samples, HPC recovers and diagonalises). Phase 4 represents an application as a task graph (a DAG) with data dependencies and transfer costs, then assigns nodes to resources, possibly cutting oversized quantum parts. Phase 2's millisecond predictors make searching over many partitions affordable.</p></div></details>
+  <details class="qa"><summary>Why federated learning instead of one central model?</summary><div class="a"><p>HPC centres have different hardware and private workloads they cannot share. Federated learning lets each improve a shared model while keeping raw job data local. Known challenges are non-IID data across sites and model families that can be averaged. Our power-law models are linear, so FedAvg averages them exactly; tree ensembles need other techniques.</p></div></details>
+  <details class="qa"><summary>What would you do with real QPU access?</summary><div class="a"><p>Three things: measure real fidelity against the EPLG estimate to learn the residual; replace the ground-truth model's labels with real outcomes for the tasks that are feasible to run; and repeat the feedback-curve experiment with real data, which is the honest test of the research hypothesis.</p></div></details>
+</section>
+
+<section class="part" id="limits">
+  <h2>Limitations, said first</h2>
+  <ul>
+    <li><strong>Fidelity model.</strong> (1 − EPLG)^N ignores single-qubit, readout (in Phase 1), idling and crosstalk errors.</li>
+    <li><strong>Mitigation overhead.</strong> 1/F² is a rough multiplier; real PEC/ZNE/PEA costs depend on the method and noise.</li>
+    <li><strong>Thresholds are hypotheses.</strong> Every one is in <code>rules.yaml</code>; learning them is the point of Phase 3.</li>
+    <li><strong>Hand-supplied flags.</strong> <code>classical_meets_target</code> and <code>low_entanglement</code> are not inferred in Phase 1.</li>
+    <li><strong>Topology proxy.</strong> Nighthawk is a 10×12 grid, not a calibrated device.</li>
+    <li><strong>Synthetic chemistry.</strong> VQE Hamiltonians are seeded random bounded-weight Pauli sums, not molecules.</li>
+    <li><strong>Simulated hybrid runs.</strong> Runtimes are projected; energy uses assumed power figures; hybrid accuracy reflects a capped SPSA budget.</li>
+    <li><strong>Small execution dataset.</strong> Runtime, energy and error models train on 7 runs.</li>
+    <li><strong>Phase 3 is a simulation study.</strong> Labels come from a model whose effects come from the literature, compared on worst-case guarantees.</li>
+  </ul>
+</section>
+
+<section class="part" id="next">
+  <h2>Phases 4–6</h2>
+  <div class="tbl"><table>
+    <tr><th>Phase</th><th>What it adds</th><th>How the current code extends</th></tr>
+    <tr><td>4 · Automatic partitioning</td><td>Split applications into classical and quantum subtasks as a DAG</td><td>Replace <code>templates.py</code>; score candidate splits with Phase 2 predictors and the Phase 3 allocator</td></tr>
+    <tr><td>5 · QPU integration</td><td>Run selected workloads on real hardware</td><td>Swap the Aer backend in <code>baselines.py</code> for a runtime backend; real outcomes replace <code>environment.py</code> labels</td></tr>
+    <tr><td>6 · Federated learning</td><td>Sites share model updates, not data</td><td>FedAvg over the power-law coefficients; simulate sites as backends or workload families</td></tr>
+  </table></div>
+</section>
+
+<section class="part" id="glossary">
+  <h2>Glossary</h2>
+  <dl class="gloss">
+    <dt>Ansatz</dt><dd>A parameterised circuit template whose parameters an optimiser tunes.</dd>
+    <dt>Bond dimension χ</dt><dd>Size of the link between neighbouring tensors in an MPS; at least 2^(ebits across that cut).</dd>
+    <dt>Chemical accuracy</dt><dd>1.6 mHa ≈ 1 kcal/mol, a common target precision for energies.</dd>
+    <dt>Ebit</dt><dd>One unit of entanglement, the amount in one maximally entangled qubit pair.</dd>
+    <dt>EPLG</dt><dd>Error per layered gate, from layer-fidelity benchmarking.</dd>
+    <dt>Estimator / Sampler</dt><dd>Qiskit primitives returning expectation values / bitstring counts.</dd>
+    <dt>FakeFez</dt><dd>A local copy of a real 156-qubit Heron's layout and calibration, used for transpiling and noise.</dd>
+    <dt>Heavy-hex</dt><dd>IBM's lattice with at most 3 neighbours per qubit, used by Heron.</dd>
+    <dt>Macro-F1</dt><dd>F1 score averaged equally over classes.</dd>
+    <dt>MAPE</dt><dd>Mean absolute percentage error.</dd>
+    <dt>Measurement group</dt><dd>Pauli terms that commute qubit-wise and can be measured in one circuit.</dd>
+    <dt>MPS</dt><dd>Matrix product state, a tensor-network representation efficient for weakly entangled states.</dd>
+    <dt>Oracle label</dt><dd>The best decision according to the ground truth, used as the training label and scoring reference.</dd>
+    <dt>QCSC</dt><dd>Quantum-centric supercomputing: QPUs integrated as part of HPC systems.</dd>
+    <dt>QRMI</dt><dd>Quantum Resource Management Interface, used to acquire and release QPUs from Slurm and other managers.</dd>
+    <dt>Regret</dt><dd>Extra cost of a decision over the best decision.</dd>
+    <dt>Routing</dt><dd>Inserting SWAPs so interacting qubits are neighbours on the chip.</dd>
+    <dt>Shot</dt><dd>One execution and measurement of a circuit.</dd>
+    <dt>SPSA</dt><dd>Simultaneous perturbation stochastic approximation, a two-evaluation gradient estimator for noisy objectives.</dd>
+    <dt>SQD</dt><dd>Sample-based quantum diagonalisation: QPU samples configurations, HPC diagonalises in that subspace.</dd>
+    <dt>Statevector</dt><dd>The full list of 2ⁿ amplitudes describing an n-qubit state.</dd>
+    <dt>Transpilation</dt><dd>Rewriting a circuit into a device's native gates and connectivity.</dd>
+  </dl>
+</section>
+
+<section class="part" id="refs">
+  <h2>References</h2>
+  <ol class="refs">
+    <li>Robledo-Moreno, J. et al. (2025). Chemistry beyond the scale of exact diagonalization on a quantum-centric supercomputer. <em>Science Advances</em> 11(25), eadu9991. <a href="https://arxiv.org/abs/2405.05068">arXiv:2405.05068</a></li>
+    <li>McKay, D. C. et al. (2023). Benchmarking quantum processor performance at scale. <a href="https://arxiv.org/abs/2311.05933">arXiv:2311.05933</a></li>
+    <li>Kim, Y. et al. (2023). Evidence for the utility of quantum computing before fault tolerance. <em>Nature</em> 618, 500–505.</li>
+    <li>Temme, K., Bravyi, S., Gambetta, J. M. (2017). Error mitigation for short-depth quantum circuits. <em>Phys. Rev. Lett.</em> 119, 180509.</li>
+    <li>van den Berg, E., Minev, Z. K., Temme, K. (2022). Model-free readout-error mitigation for quantum expectation values. <em>Phys. Rev. A</em> 105, 032620. <a href="https://arxiv.org/abs/2012.09738">arXiv:2012.09738</a></li>
+    <li>Vidal, G. (2003). Efficient classical simulation of slightly entangled quantum computations. <em>Phys. Rev. Lett.</em> 91, 147902.</li>
+    <li>Aaronson, S., Gottesman, D. (2004). Improved simulation of stabilizer circuits. <em>Phys. Rev. A</em> 70, 052328.</li>
+    <li>Häner, T., Steiger, D. S. (2017). 0.5 petabyte simulation of a 45-qubit quantum circuit. <em>SC17</em>.</li>
+    <li>Peruzzo, A. et al. (2014). A variational eigenvalue solver on a photonic quantum processor. <em>Nature Communications</em> 5, 4213.</li>
+    <li>Kandala, A. et al. (2017). Hardware-efficient variational quantum eigensolver for small molecules and quantum magnets. <em>Nature</em> 549, 242–246.</li>
+    <li>McClean, J. R. et al. (2018). Barren plateaus in quantum neural network training landscapes. <em>Nature Communications</em> 9, 4812.</li>
+    <li>Farhi, E., Goldstone, J., Gutmann, S. (2014). A quantum approximate optimization algorithm. <a href="https://arxiv.org/abs/1411.4028">arXiv:1411.4028</a></li>
+    <li>Wurtz, J., Love, P. (2021). MaxCut quantum approximate optimization algorithm performance guarantees for p &gt; 1. <em>Phys. Rev. A</em> 103, 042612. <a href="https://arxiv.org/abs/2010.11209">arXiv:2010.11209</a></li>
+    <li>Goemans, M. X., Williamson, D. P. (1995). Improved approximation algorithms for maximum cut and satisfiability problems using semidefinite programming. <em>J. ACM</em> 42(6), 1115–1145.</li>
+    <li>Spall, J. C. (1992). Multivariate stochastic approximation using a simultaneous perturbation gradient approximation. <em>IEEE Trans. Automatic Control</em> 37(3), 332–341.</li>
+    <li>Li, G., Ding, Y., Xie, Y. (2019). Tackling the qubit mapping problem for NISQ-era quantum devices (SABRE). <em>ASPLOS</em>.</li>
+    <li>Preskill, J. (2018). Quantum computing in the NISQ era and beyond. <em>Quantum</em> 2, 79.</li>
+    <li>Peng, T. et al. (2020). Simulating large quantum circuits on a small quantum computer. <em>Phys. Rev. Lett.</em> 125, 150504. Tang, W. et al. (2021). CutQC. <em>ASPLOS</em>.</li>
+    <li>Giortamis, E. et al. (2025). Qonductor: a cloud orchestrator for quantum computing. <em>SC'25</em>. <a href="https://arxiv.org/abs/2408.04312">arXiv:2408.04312</a></li>
+    <li>Xing, L. et al. (2025). Quantum Processing Unit (QPU) processing time prediction with machine learning. <a href="https://arxiv.org/abs/2510.20630">arXiv:2510.20630</a></li>
+    <li>IBM (12 March 2026). Reference architecture for quantum-centric supercomputing (press coverage: <a href="https://www.nasdaq.com/press-release/ibm-releases-new-blueprint-quantum-centric-supercomputing-2026-03-12">IBM release</a>).</li>
+    <li>IBM Nighthawk announcement, 12 November 2025 (coverage: <a href="https://www.tomshardware.com/tech-industry/semiconductors/ibm-unveils-new-120-qubit-processor-and-software-stack">Tom's Hardware</a>).</li>
+    <li>Hoerl, A. E., Kennard, R. W. (1970). Ridge regression. <em>Technometrics</em> 12(1), 55–67. Breiman, L. et al. (1984). <em>Classification and Regression Trees</em>. Breiman, L. (2001). Random forests. <em>Machine Learning</em> 45, 5–32. Friedman, J. H. (2001). Greedy function approximation: a gradient boosting machine. <em>Annals of Statistics</em> 29(5).</li>
+    <li>Elkan, C. (2001). The foundations of cost-sensitive learning. <em>IJCAI</em>.</li>
+    <li>McMahan, B. et al. (2017). Communication-efficient learning of deep networks from decentralized data. <em>AISTATS</em>.</li>
+  </ol>
+</section>
+
+</div>
+</main>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const fmt = (x, d=3) => {
+    if (x === Infinity) return "∞";
+    if (!isFinite(x)) return "—";
+    if (x === 0) return "0";
+    const a = Math.abs(x);
+    if (a >= 1e5 || a < 1e-3) return x.toExponential(2).replace("e+", "e");
+    return Number(x.toPrecision(d)).toLocaleString("en-US", {maximumFractionDigits: 6});
+  };
+  const stat = (l, v) => `<div class="stat"><div class="l">${l}</div><div class="v">${v}</div></div>`;
+  const chip = r => `<span class="big ${{CLASSICAL:"c-classical",HYBRID:"c-hybrid",REDESIGN:"c-redesign"}[r]}">${r}</span>`;
+  const humanTime = s => s === Infinity ? "∞" : s < 60 ? fmt(s) + " s" : s < 3600 ? fmt(s/60) + " min" : s < 86400*365 ? fmt(s/3600) + " h" : fmt(s/31557600) + " years";
+
+  // contents toggle (phone)
+  const rail = $("rail"), tt = $("tocToggle");
+  tt.addEventListener("click", () => { const o = rail.classList.toggle("open"); tt.setAttribute("aria-expanded", o); tt.textContent = o ? "Hide contents" : "Show contents"; });
+  // highlight current section
+  const links = [...document.querySelectorAll(".rail a")];
+  const map = new Map(links.map(a => [a.getAttribute("href").slice(1), a]));
+  const obs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { links.forEach(l => l.classList.remove("on")); const a = map.get(e.target.id); if (a) a.classList.add("on"); } }), {rootMargin: "-20% 0px -70% 0px"});
+  document.querySelectorAll("section.part[id]").forEach(s => obs.observe(s));
+
+  // ---------------------------------------------------------------- calculators
+  function shots(){
+    const c = +$("sc_c").value, e = +$("sc_e").value, f = Math.max(+$("sc_f").value, 1e-12), t = +$("sc_t").value;
+    const n0 = (c/e)**2, n1 = n0/(f*f);
+    $("sc_out").innerHTML = stat("noise-free shots", fmt(n0)) + stat("QPU time, noise-free", humanTime(n0/t))
+      + stat("with 1/F² overhead", fmt(n1)) + stat("QPU time, mitigated", humanTime(n1/t));
+  }
+  ["sc_c","sc_e","sc_f","sc_t"].forEach(id => $(id).addEventListener("input", shots)); shots();
+
+  function fid(){
+    const n = +$("fc_n").value, e = +$("fc_e").value, F = Math.exp(n*Math.log1p(-e));
+    $("fc_out").innerHTML = stat("two-qubit gates", n.toLocaleString()) + stat("estimated F", fmt(F))
+      + stat("error-free shots per 10,000", fmt(F*1e4)) + stat("mitigation overhead 1/F²", fmt(1/(F*F)));
+  }
+  ["fc_n","fc_e"].forEach(id => $(id).addEventListener("input", fid)); fid();
+
+  function mem(){
+    const n = Math.max(1, +$("mc_n").value), e = Math.max(0, +$("mc_e").value);
+    const sv = 16*2**n, chi = 2**Math.min(e, Math.floor(n/2)), mps = n*chi*chi*16;
+    const gib = b => b/2**30;
+    const show = b => b >= 2**60 ? fmt(gib(b)) + " GiB" : gib(b) >= 1 ? fmt(gib(b)) + " GiB" : fmt(b/2**20) + " MiB";
+    const ok16 = sv <= 16*2**30 ? "fits 16 GiB" : sv <= 512*2**30 ? "needs an HPC node" : "infeasible";
+    $("mc_out").innerHTML = stat("statevector memory", show(sv)) + stat("statevector verdict", ok16)
+      + stat("MPS bond dimension χ", chi.toLocaleString()) + stat("MPS memory", show(mps) + (chi <= 4096 ? " · exact" : " · too large"));
+  }
+  ["mc_n","mc_e"].forEach(id => $(id).addEventListener("input", mem)); mem();
+
+  // ---------------------------------------------------------------- Phase 1 rule engine (port of rules.py)
+  const BACKENDS = {heron_r3:{qubits:156, eplg:0.00215, thr:4000}, nighthawk_r2:{qubits:120, eplg:0.003, thr:100000}};
+  const KIND = {vqe:"expect", dyn:"expect", qaoa:"sample", samp:"sample", sqd:"recover"};
+  const FMIN = {expect:0.05, sample:0.01, recover:1e-4}, MEM_GIB = 16;
+  function derive(p){
+    const kind = KIND[p.alg] || null, be = BACKENDS[p.qpu];
+    const F = be.eplg < 1 ? Math.exp(p.gates*Math.log1p(-be.eplg)) : 0;
+    let shots = 0;
+    if (kind === "expect") shots = F > 0 ? (p.sac/p.prec)**2/(F*F) : Infinity;
+    else if (kind) shots = p.samples;
+    return {kind, F, shots, qpu: shots/be.thr, sv: 16*2**p.n};
+  }
+  function decide(p){
+    const d = derive(p), be = BACKENDS[p.qpu], gib = d.sv/2**30, runMin = p.queue + d.qpu/60;
+    const R = [
+      ["R1","CLASSICAL", p.cls==="classical"||p.alg==="none", `problem_class=${p.cls}, algorithm=${p.alg}: no quantum algorithm applies`, "task has a quantum algorithm candidate"],
+      ["R2","CLASSICAL", d.sv <= MEM_GIB*2**30, `${p.n} qubits: statevector ${fmt(gib)} GiB fits in ${MEM_GIB} GiB`, `${p.n} qubits: statevector ${fmt(gib)} GiB exceeds ${MEM_GIB} GiB`],
+      ["R3","CLASSICAL", p.lowEnt, "low entanglement: tensor-network/MPS methods apply", "entanglement not flagged as low"],
+      ["R4","CLASSICAL", p.cmt, "a classical method already meets the precision target", "no classical method known to meet the target"],
+      ["R5","REDESIGN", p.n > be.qubits, `${p.n} qubits > ${be.qubits} on ${p.qpu}`, `${p.n} qubits fit on ${p.qpu} (${be.qubits})`],
+      ["R6","REDESIGN", () => d.F < FMIN[d.kind], () => `F=${fmt(d.F)} < F_min[${d.kind}]=${FMIN[d.kind]}`, () => `F=${fmt(d.F)} >= F_min[${d.kind}]=${FMIN[d.kind]}`],
+      ["R7","REDESIGN", d.shots > p.budget, `shots ${fmt(d.shots)} > budget ${fmt(p.budget)}`, `shots ${fmt(d.shots)} <= budget ${fmt(p.budget)}`],
+      ["R8","CLASSICAL", runMin > p.deadline, `queue+QPU ${fmt(runMin)} min > deadline ${p.deadline} min (classical fallback)`, `queue+QPU ${fmt(runMin)} min <= deadline ${p.deadline} min`],
+      ["R9","HYBRID", true, `all checks passed: run ${p.alg} as hybrid workflow on ${p.qpu}`, ""],
+    ];
+    const trace = [];
+    for (const [id, route, pred, yes, no] of R) {
+      const fired = typeof pred === "function" ? pred() : pred;
+      const why = fired ? (typeof yes === "function" ? yes() : yes) : (typeof no === "function" ? no() : no);
+      trace.push({id, fired, why});
+      if (fired) return {route, rule: id, trace, d};
+    }
+  }
+  const P1 = {
+    h2_vqe:{cls:"chem",alg:"vqe",qpu:"heron_r3",n:4,gates:3,sac:1,prec:0.001,samples:0,budget:1e7,queue:0,deadline:480,lowEnt:false,cmt:false},
+    maxcut20:{cls:"opt",alg:"qaoa",qpu:"heron_r3",n:20,gates:60,sac:0,prec:0.001,samples:1e5,budget:1e7,queue:0,deadline:480,lowEnt:false,cmt:false},
+    maxcut120:{cls:"opt",alg:"qaoa",qpu:"nighthawk_r2",n:120,gates:600,sac:0,prec:0.001,samples:1e5,budget:1e7,queue:60,deadline:480,lowEnt:false,cmt:true},
+    maxcut120_open:{cls:"opt",alg:"qaoa",qpu:"nighthawk_r2",n:120,gates:600,sac:0,prec:0.001,samples:1e5,budget:1e7,queue:60,deadline:480,lowEnt:false,cmt:false},
+    fes_sqd:{cls:"chem",alg:"sqd",qpu:"heron_r3",n:77,gates:3500,sac:0,prec:0.001,samples:3e6,budget:1e7,queue:60,deadline:480,lowEnt:false,cmt:false},
+    fes_vqe:{cls:"chem",alg:"vqe",qpu:"heron_r3",n:77,gates:3500,sac:50,prec:0.001,samples:3e6,budget:1e7,queue:60,deadline:480,lowEnt:false,cmt:false},
+    lin_solve:{cls:"classical",alg:"none",qpu:"heron_r3",n:0,gates:0,sac:0,prec:0.001,samples:0,budget:0,queue:0,deadline:480,lowEnt:false,cmt:false},
+    deep_random:{cls:"samp",alg:"samp",qpu:"heron_r3",n:100,gates:20000,sac:0,prec:0.001,samples:1e5,budget:1e7,queue:60,deadline:480,lowEnt:false,cmt:false},
+  };
+  const EF = {cls:"e_class",alg:"e_alg",qpu:"e_qpu",n:"e_n",gates:"e_g",sac:"e_c",prec:"e_p",samples:"e_s",budget:"e_b",queue:"e_q",deadline:"e_d"};
+  function setEngine(p){ for (const [k,id] of Object.entries(EF)) $(id).value = p[k]; $("e_le").checked = p.lowEnt; $("e_cm").checked = p.cmt; runEngine(); }
+  function readEngine(){
+    const p = {}; for (const [k,id] of Object.entries(EF)) p[k] = ["cls","alg","qpu"].includes(k) ? $(id).value : +$(id).value;
+    p.lowEnt = $("e_le").checked; p.cmt = $("e_cm").checked; return p;
+  }
+  function runEngine(){
+    const r = decide(readEngine());
+    $("e_verdict").innerHTML = chip(r.route) + `<span>via ${r.rule}</span>`;
+    $("e_out").innerHTML = stat("algorithm kind", r.d.kind || "none") + stat("estimated F", fmt(r.d.F)) + stat("shots", fmt(r.d.shots))
+      + stat("QPU time", humanTime(r.d.qpu)) + stat("statevector", fmt(r.d.sv/2**30) + " GiB");
+    $("e_trace").textContent = r.trace.map(t => `${t.id}  ${t.fired ? "FIRE" : "pass"}  ${t.why}`).join("\n");
+  }
+  $("eng_presets").innerHTML = Object.keys(P1).map(k => `<button class="pre" data-p="${k}">${k}</button>`).join("");
+  $("eng_presets").addEventListener("click", e => { const k = e.target.dataset.p; if (k) setEngine(P1[k]); });
+  [...Object.values(EF), "e_le", "e_cm"].forEach(id => $(id).addEventListener("input", runEngine));
+  setEngine(P1.fes_sqd);
+
+  // ---------------------------------------------------------------- Phase 3 ground truth (port of environment.py)
+  const ENV = {mem:512*2**30, bw:200e9, flops:1e13, chiMax:4096, gw:0.878, overhead:1, nodeW:1000,
+               ro:0.0076, good:1000, qaoa:{1:0.6924,2:0.7559,3:0.7924}, floor:1e-3, qpuW:25000};
+  const J = (t, e, q) => t + 0.001*e + 10*q;
+  function classical(t){
+    const gates = 3*t.gates, dl = t.deadline*60, m = [];
+    if (t.fam === "maxcut") m.push(["heuristic", 1e-4*1.5*t.n, ENV.gw >= t.ratio]);
+    else {
+      if (16*2**t.n <= ENV.mem) m.push(["statevector", gates*2**t.n*32/ENV.bw, true]);
+      const chi = 2**Math.min(t.ebits, Math.floor(t.n/2));
+      if (chi <= ENV.chiMax && t.n*chi*chi*16 <= ENV.mem) m.push(["MPS", gates*8*chi**3/ENV.flops, true]);
+    }
+    const mm = m.map(([n,s,ok]) => [n, s+ENV.overhead, ok]);
+    const ok = mm.filter(([n,s,meets]) => meets && s <= dl);
+    if (ok.length) { const [n,s] = ok.reduce((a,b) => a[1] <= b[1] ? a : b); return {ok:true, why:`${n} in ${humanTime(s)}`, J:J(s, s*ENV.nodeW, 0)}; }
+    if (mm.length) { const [n,s,meets] = mm.reduce((a,b) => a[1] <= b[1] ? a : b); return {ok:false, why:`${n} ${meets ? "misses the deadline" : `reaches only ${ENV.gw} < target ${t.ratio}`}`}; }
+    return {ok:false, why:"too large and too entangled for statevector or MPS"};
+  }
+  function hybrid(t){
+    const be = BACKENDS[t.be], dl = t.deadline*60, q = t.queue*60;
+    if (t.n > be.qubits) return {ok:false, why:`${t.n} qubits > ${be.qubits}`};
+    const expect = t.fam === "vqe";
+    let F = Math.exp(t.gates*Math.log1p(-be.eplg)); if (!expect) F *= (1-ENV.ro)**t.n;
+    let shots;
+    if (expect) { if (F < ENV.floor) return {ok:false, F, why:`F=${fmt(F)} below mitigation floor`}; shots = (t.sac/t.prec)**2/(F*F); }
+    else if (t.fam === "maxcut") { const r = F*ENV.qaoa[Math.min(3,Math.max(1,t.p))] + (1-F)*0.5; if (r < t.ratio) return {ok:false, F, why:`noisy QAOA ratio ${fmt(r)} < target ${t.ratio}`}; shots = t.samples; }
+    else shots = F > 0 ? Math.max(t.samples, ENV.good/F) : Infinity;
+    if (shots > t.budget) return {ok:false, F, why:`needs ${fmt(shots)} shots > budget ${fmt(t.budget)}`};
+    const qs = shots/be.thr;
+    if (q + qs > dl) return {ok:false, F, why:`queue + QPU ${humanTime(q+qs)} > deadline`};
+    return {ok:true, F, why:`F=${fmt(F)}, ${fmt(shots)} shots, ${humanTime(q+qs)}`, J:J(q+qs, qs*ENV.qpuW, qs)};
+  }
+  const XF = {fam:"x_fam",be:"x_be",n:"x_n",gates:"x_g",ebits:"x_e",p:"x_p",sac:"x_c",prec:"x_pr",ratio:"x_rt",samples:"x_s",budget:"x_b",queue:"x_q",deadline:"x_d"};
+  const P3 = {
+    "VQE 100 q, linear, 2 layers": {fam:"vqe",be:"heron_r3",n:100,gates:198,ebits:2,p:1,sac:292,prec:0.01,ratio:0.85,samples:1e5,budget:1e7,queue:30,deadline:480,
+      note:"Rules: past R2 and a huge VQE shot count, so REDESIGN. Truth: 2 ebits means χ = 4, an exact MPS in about a second. The AI said CLASSICAL."},
+    "Max-Cut 100 nodes, Nighthawk": {fam:"maxcut",be:"nighthawk_r2",n:100,gates:936,ebits:46,p:1,sac:150,prec:0.01,ratio:0.85,samples:1e5,budget:1e7,queue:30,deadline:480,
+      note:"Rules: F passes R6, so HYBRID. Truth: noisy QAOA's expected ratio is near 0.5, while the classical heuristic guarantees 0.878. The AI said CLASSICAL."},
+    "Random 50 q, depth 20, 1e8 budget": {fam:"random",be:"heron_r3",n:50,gates:3747,ebits:25,p:1,sac:0,prec:0.01,ratio:0.85,samples:1e4,budget:1e8,queue:30,deadline:480,
+      note:"Rules: F ≈ 3×10⁻⁴ fails R6, so REDESIGN. Truth: the budget buys about 20,000 clean samples, so taking more shots works. The AI said HYBRID."},
+    "Boundary: random 60 q, Nighthawk": {fam:"random",be:"nighthawk_r2",n:60,gates:3342,ebits:30,p:1,sac:0,prec:0.01,ratio:0.85,samples:1e4,budget:1e8,queue:30,deadline:480,
+      note:"The AI gets this one wrong: it said REDESIGN. The budget buys about 2,800 clean samples against 1,000 needed, and the AI cannot see the readout factor."},
+    "Small: random 30 q": {fam:"random",be:"heron_r3",n:30,gates:1100,ebits:15,p:1,sac:0,prec:0.01,ratio:0.85,samples:1e5,budget:1e7,queue:30,deadline:480,
+      note:"30 qubits: statevector on one node is cheap, and the QPU queue alone costs more. Both say CLASSICAL."},
+  };
+  function setX(p){ for (const [k,id] of Object.entries(XF)) $(id).value = p[k]; $("x_note").textContent = p.note || ""; runX(); }
+  function runX(){
+    const t = {}; for (const [k,id] of Object.entries(XF)) t[k] = ["fam","be"].includes(k) ? $(id).value : +$(id).value;
+    const cl = classical(t), hy = hybrid(t);
+    let label = "REDESIGN";
+    if (cl.ok && hy.ok) label = cl.J <= hy.J ? "CLASSICAL" : "HYBRID"; else if (cl.ok) label = "CLASSICAL"; else if (hy.ok) label = "HYBRID";
+    const alg = {vqe:"vqe", maxcut:"qaoa", random:"samp"}[t.fam], cls = {vqe:"chem", maxcut:"opt", random:"samp"}[t.fam];
+    const r = decide({cls, alg, qpu:t.be, n:t.n, gates:t.gates, sac:t.sac, prec:t.prec, samples: alg === "vqe" ? 0 : t.samples,
+                      budget:t.budget, queue:t.queue, deadline:t.deadline, lowEnt:false, cmt:false});
+    $("x_verdict").innerHTML = `<span>Phase 1 rules</span>${chip(r.route)}<span style="color:var(--faint)">via ${r.rule}</span><span style="margin-left:8px">Ground truth</span>${chip(label)}`;
+    $("x_cl").innerHTML = `<strong style="color:${cl.ok ? "var(--hybrid)" : "var(--redesign)"}">${cl.ok ? "feasible" : "infeasible"}</strong> · ${cl.why}`;
+    $("x_hy").innerHTML = `<strong style="color:${hy.ok ? "var(--hybrid)" : "var(--redesign)"}">${hy.ok ? "feasible" : "infeasible"}</strong> · ${hy.why}`;
+  }
+  $("x_presets").innerHTML = Object.keys(P3).map(k => `<button class="pre" data-x="${k}">${k}</button>`).join("");
+  $("x_presets").addEventListener("click", e => { const k = e.target.dataset.x; if (k) setX(P3[k]); });
+  Object.values(XF).forEach(id => $(id).addEventListener("input", () => { $("x_note").textContent = ""; runX(); }));
+  setX(P3["VQE 100 q, linear, 2 layers"]);
+
+  // ---------------------------------------------------------------- charts (drawn to scale, colours from tokens)
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
+  function allocChart(){
+    const rows = [["Classical-only",67.3,1176,"var(--classical)"],["Quantum-only",12.7,75746,"var(--accent)"],["Rules (exact)",54.6,2855,"var(--faint)"],
+      ["Rules + predictions",54.5,2860,"var(--faint)"],["Rules, tuned",57.5,2460,"var(--faint)"],["AI: decision tree",96.7,285,"var(--hybrid)"],["AI: boosting",97.1,420,"var(--hybrid)"]];
+    const W = 720, rowH = 30, top = 34, left = 150, barW = 400, H = top + rows.length*rowH + 30;
+    const s = el("svg", {viewBox:`0 0 ${W} ${H}`, width:W, height:H});
+    s.appendChild(el("text", {x:left, y:16, fill:"var(--muted)", "font-family":"var(--display)", "font-size":12, "font-weight":700}, "Decision accuracy vs oracle (held-out workloads)"));
+    s.appendChild(el("text", {x:left+barW+20, y:16, fill:"var(--muted)", "font-family":"var(--display)", "font-size":12, "font-weight":700}, "Mean regret"));
+    [0,25,50,75,100].forEach(v => { const x = left + barW*v/100;
+      s.appendChild(el("line", {x1:x, x2:x, y1:top-6, y2:top+rows.length*rowH, stroke:"var(--line)", "stroke-width":1}));
+      s.appendChild(el("text", {x, y:H-10, fill:"var(--faint)", "font-family":"var(--mono)", "font-size":10, "text-anchor":"middle"}, v + "%")); });
+    rows.forEach(([name, acc, reg, col], i) => { const y = top + i*rowH;
+      s.appendChild(el("text", {x:left-10, y:y+15, fill:"var(--ink)", "font-family":"var(--display)", "font-size":12, "text-anchor":"end"}, name));
+      s.appendChild(el("rect", {x:left, y:y+3, width:barW*acc/100, height:rowH-10, rx:3, fill:col, opacity:0.85}));
+      s.appendChild(el("text", {x:left+barW*acc/100+6, y:y+15, fill:"var(--ink)", "font-family":"var(--mono)", "font-size":11}, acc.toFixed(1) + "%"));
+      s.appendChild(el("text", {x:left+barW+20, y:y+15, fill:"var(--muted)", "font-family":"var(--mono)", "font-size":11}, reg.toLocaleString())); });
+    $("ch_alloc").appendChild(s);
+  }
+  function fbChart(){
+    const xs = [0,5,10,20,30], series = [
+      ["AI: gradient boosting",[5753,5973,2268,1674,397],"var(--hybrid)",false],
+      ["AI: decision tree",[8968,9136,9034,4632,1234],"var(--accent)",false],
+      ["Rules (exact transpile)",[5340,5340,5340,5340,5340],"var(--redesign)",true],
+      ["Classical-only",[1613,1613,1613,1613,1613],"var(--classical)",true]];
+    const W = 720, H = 330, L = 64, R = 190, T = 22, B = 46, yMax = 10000;
+    const X = v => L + (W-L-R)*v/30, Y = v => T + (H-T-B)*(1 - v/yMax);
+    const s = el("svg", {viewBox:`0 0 ${W} ${H}`, width:W, height:H});
+    [0,2500,5000,7500,10000].forEach(v => { s.appendChild(el("line", {x1:L, x2:W-R, y1:Y(v), y2:Y(v), stroke:"var(--line)", "stroke-width":1}));
+      s.appendChild(el("text", {x:L-8, y:Y(v)+4, fill:"var(--faint)", "font-family":"var(--mono)", "font-size":10, "text-anchor":"end"}, v.toLocaleString())); });
+    xs.forEach(v => s.appendChild(el("text", {x:X(v), y:H-B+18, fill:"var(--faint)", "font-family":"var(--mono)", "font-size":10, "text-anchor":"middle"}, v + "%")));
+    s.appendChild(el("text", {x:(L+W-R)/2, y:H-6, fill:"var(--muted)", "font-family":"var(--display)", "font-size":12, "text-anchor":"middle"}, "Share of large workloads fed back as execution feedback"));
+    s.appendChild(el("text", {x:14, y:(T+H-B)/2, fill:"var(--muted)", "font-family":"var(--display)", "font-size":12, "text-anchor":"middle", transform:`rotate(-90 14 ${(T+H-B)/2})`}, "Mean regret (lower is better)"));
+    const labelY = [];
+    series.forEach(([name, ys, col, dashed]) => {
+      s.appendChild(el("polyline", {points: xs.map((x,i) => `${X(x)},${Y(ys[i])}`).join(" "), fill:"none", stroke:col, "stroke-width":2.4, "stroke-dasharray": dashed ? "6 5" : "none"}));
+      if (!dashed) xs.forEach((x,i) => s.appendChild(el("circle", {cx:X(x), cy:Y(ys[i]), r:3.6, fill:col})));
+      let ly = Y(ys[ys.length-1]); while (labelY.some(v => Math.abs(v-ly) < 15)) ly += 15; labelY.push(ly);
+      s.appendChild(el("text", {x:W-R+10, y:ly+4, fill:col, "font-family":"var(--display)", "font-size":12, "font-weight":600}, name));
+    });
+    $("ch_fb").appendChild(s);
+  }
+  allocChart(); fbChart();
+})();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"default"});</script>
+</html>
