@@ -11,13 +11,13 @@ has no exact embedding in the coupling map (e.g. 50/70/90/110-qubit rings on hea
 that embed) or dense random circuits, where Qiskit's VF2 layout search runs to its limit before routing.
 0 transpiles hit the 60 s hard timeout. The predictors answer in milliseconds regardless.
 
-## interpolation (random 25% held out)
+## interpolation (random 25% of circuits held out)
 
 | target | MAPE analytic | MAPE power-law | MAPE gbt | R² analytic | R² power-law | R² gbt |
 |---|---|---|---|---|---|---|
-| depth | — | 0.159 | 0.18 | — | 0.972 | 0.905 |
-| measurement_groups | 50 | 0.0303 | 0.0138 | -6.87e+03 | 0.98 | 0.998 |
-| two_qubit_gates | 0.426 | 0.13 | 0.133 | 0.129 | 0.995 | 0.888 |
+| depth | — | 0.134 | 0.171 | — | 0.949 | 0.885 |
+| measurement_groups | 65.7 | 0.0334 | 0.0215 | -8.22e+03 | 0.976 | 0.983 |
+| two_qubit_gates | 0.467 | 0.11 | 0.158 | 0.0397 | 0.994 | 0.878 |
 
 ## extrapolation (train n<=40, test n>40)
 
@@ -33,12 +33,12 @@ Predicted circuit fields fed into the unchanged Phase 1 rules, compared with dec
 
 | split | model | n_test | decision agreement | fired-rule agreement | median |log10 F error| | predict+decide ms/task | exact transpile ms/task |
 |---|---|---|---|---|---|---|---|
-| interpolation (random 25% held out) | analytic | 152 | 0.888 | 0.875 | 0.0981 | 1.72 | 1.53e+03 |
-| interpolation (random 25% held out) | power-law | 152 | 0.987 | 0.987 | 0.0225 | 1.78 | 1.53e+03 |
-| interpolation (random 25% held out) | gbt | 152 | 0.987 | 0.987 | 0.0215 | 1.82 | 1.53e+03 |
-| extrapolation (train n<=40, test n>40) | analytic | 288 | 0.691 | 0.684 | 0.788 | 1.74 | 2.46e+03 |
-| extrapolation (train n<=40, test n>40) | power-law | 288 | 0.958 | 0.951 | 0.136 | 1.82 | 2.46e+03 |
-| extrapolation (train n<=40, test n>40) | gbt | 288 | 0.899 | 0.885 | 0.272 | 1.78 | 2.46e+03 |
+| interpolation (random 25% of circuits held out) | analytic | 152 | 0.836 | 0.803 | 0.255 | 1.87 | 2.29e+03 |
+| interpolation (random 25% of circuits held out) | power-law | 152 | 1 | 0.993 | 0.04 | 1.96 | 2.29e+03 |
+| interpolation (random 25% of circuits held out) | gbt | 152 | 1 | 0.993 | 0.0453 | 2.01 | 2.29e+03 |
+| extrapolation (train n<=40, test n>40) | analytic | 288 | 0.691 | 0.684 | 0.788 | 1.89 | 2.46e+03 |
+| extrapolation (train n<=40, test n>40) | power-law | 288 | 0.958 | 0.951 | 0.136 | 1.97 | 2.46e+03 |
+| extrapolation (train n<=40, test n>40) | gbt | 288 | 0.899 | 0.885 | 0.272 | 1.95 | 2.46e+03 |
 
 ## Execution-outcome models (runtime, energy, error)
 

@@ -4,6 +4,11 @@
 # 16 GiB <=> n_qubits <= 30.
 statevector_memory_gib: 16
 
+# R3: low entanglement if the circuit's entanglement bound (two-qubit gates crossing any cut of the
+# qubit line, capped by the smaller side, in ebits) is at most this. Exact MPS then needs bond
+# dimension <= 2^12 = 4096. The profiler computes the bound from the logical circuit (no transpile).
+low_entanglement_max_ebits: 12
+
 # R6: minimum estimated circuit fidelity per algorithm kind.
 fidelity_min:
   expect: 0.05     # expectation values: mitigation overhead ~1/F^2 explodes below this

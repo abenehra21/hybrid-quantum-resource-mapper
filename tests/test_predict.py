@@ -21,3 +21,11 @@ def test_predicted_profile_decides_without_transpiling():
     assert pred.two_qubit_gates > row["analytic_2q"]  # routing on heavy-hex adds SWAPs
     profile = profile_from_features(row, pred.two_qubit_gates, pred.depth, pred.measurement_groups, "t")
     assert decide(profile).decision in {"CLASSICAL", "HYBRID", "REDESIGN"}
+
+
+def test_interpolation_split_holds_out_whole_circuits():
+    from hybrid_mapper.predict import CIRCUIT, splits
+
+    train, test = next(iter(splits(load_dataset()).values()))
+    key = lambda d: set(d[CIRCUIT].itertuples(index=False, name=None))
+    assert not key(train) & key(test)  # no circuit in both, even on a different backend

@@ -2,7 +2,9 @@
 
 Allocators compared on the same held-out tasks (the proposal's evaluation table, plus ablations):
   Classical-only, Quantum-only     single-platform baselines
-  Rules (exact transpile)          Phase 1 as built: exact circuit fields, hand-set thresholds
+  Rules (exact transpile)          Phase 1 rules on exact circuit fields, R3 never firing (low_entanglement
+                                   unknown), as in the original proposal
+  Rules + R3 entanglement check    the same, with R3 fed the circuit's entanglement bound (profiler.py)
   Rules + Phase 2 predictions      augment: the same rules fed predicted fields (no transpile)
   Rules, tuned thresholds          augment: rules.yaml thresholds fitted to minimise training regret
   AI: decision tree (depth 4)      replace: an interpretable learned policy, printable as if-then rules
@@ -10,8 +12,8 @@ Allocators compared on the same held-out tasks (the proposal's evaluation table,
   Oracle                           ground truth from environment.py (the label being learned)
 
 The learned allocators see only what is known before execution: problem-level features, operating
-conditions, and Phase 2 predicted circuit fields. Hidden quantities (entanglement bound, realised queue,
-readout effects) reach them only through the oracle labels they are trained on.
+conditions, and Phase 2 predicted circuit fields. The entanglement bound, realised queue and readout
+effects reach them only through the oracle labels they are trained on.
 """
 import math
 from dataclasses import replace
@@ -27,8 +29,8 @@ from sklearn.model_selection import GroupShuffleSplit
 from sklearn.tree import DecisionTreeClassifier, export_text
 
 from hybrid_mapper.dataset import DATA_PATH, LABELS, build
-from hybrid_mapper.environment import (ACTIONS, evaluate_action, flatten, load_environment, oracle,
-                                       workload_entanglement_bound)
+from hybrid_mapper.environment import ACTIONS, evaluate_action, flatten, load_environment, oracle
+from hybrid_mapper.profiler import workload_entanglement_bound
 from hybrid_mapper.predict import ResourcePredictor, load_dataset, profile_from_features
 from hybrid_mapper.rules import decide, derive, load_rules
 
@@ -182,10 +184,14 @@ def evaluate_split(train: pd.DataFrame, test: pd.DataFrame) -> dict:
     X_tr, X_te = features(train, pred_tr, prof_tr), features(test, pred_te, prof_te)
     tuned = tune_rules(prof_tr, train, penalty)
     tree, gbt = fit_learned(X_tr, train.oracle_label, mistake_cost(train, penalty))
+    exact_te = profiles(test, test[LABELS])
+    max_ebits = load_rules()["low_entanglement_max_ebits"]
     actions = {
         "Classical-only": ["CLASSICAL"] * len(test),
         "Quantum-only": ["HYBRID"] * len(test),
-        "Rules (exact transpile)": [decide(p).decision for p in profiles(test, test[LABELS])],
+        "Rules (exact transpile)": [decide(p).decision for p in exact_te],
+        "Rules + R3 entanglement check": [decide(replace(p, low_entanglement=bool(b <= max_ebits))).decision
+                                          for p, b in zip(exact_te, test.entanglement_bound)],
         "Rules + Phase 2 predictions": [decide(p).decision for p in prof_te],
         "Rules, tuned thresholds": [decide(p, cfg=tuned).decision for p in prof_te],
         "AI: decision tree": list(tree.predict(X_te)),
@@ -196,11 +202,26 @@ def evaluate_split(train: pd.DataFrame, test: pd.DataFrame) -> dict:
             "tuned": tuned, "tree": tree, "gbt": gbt, "X_test": X_te, "test": test}
 
 
-def splits(tasks: pd.DataFrame) -> dict:
-    tr, te = next(GroupShuffleSplit(test_size=0.3, random_state=0).split(tasks, groups=tasks.workload_id))
+def splits(tasks: pd.DataFrame, seed: int = 0) -> dict:
+    tr, te = next(GroupShuffleSplit(test_size=0.3, random_state=seed).split(tasks, groups=tasks.workload_id))
     return {"random 30% of workloads held out": (tasks.iloc[tr], tasks.iloc[te]),
             f"extrapolation (train n<={EXTRAPOLATION_CUTOFF}, test n>{EXTRAPOLATION_CUTOFF})":
                 (tasks[tasks.n_qubits <= EXTRAPOLATION_CUTOFF], tasks[tasks.n_qubits > EXTRAPOLATION_CUTOFF])}
+
+
+def stability(tasks: pd.DataFrame, seeds=range(5)) -> pd.DataFrame:
+    """Decision accuracy and regret over several random workload splits (mean and standard deviation),
+    so a headline number is not one lucky split."""
+    rows = []
+    for seed in seeds:
+        train, test = next(iter(splits(tasks, seed).values()))
+        for name, m in evaluate_split(train, test)["metrics"].items():
+            rows.append({"allocator": name, "accuracy": m["Decision accuracy (vs oracle)"],
+                         "regret": m["Mean regret (cost units)"]})
+    agg = pd.DataFrame(rows).groupby("allocator", sort=False).agg(["mean", "std"])
+    return pd.DataFrame({"Allocator": agg.index,
+                         "Decision accuracy": [f"{m:.3f} ± {s:.3f}" for m, s in agg["accuracy"].to_numpy()],
+                         "Mean regret": [f"{m:,.0f} ± {s:,.0f}" for m, s in agg["regret"].to_numpy()]})
 
 
 def feedback_curve(tasks: pd.DataFrame, fractions=(0.0, 0.05, 0.1, 0.2, 0.3), seed: int = 0) -> pd.DataFrame:
@@ -217,7 +238,8 @@ def feedback_curve(tasks: pd.DataFrame, fractions=(0.0, 0.05, 0.1, 0.2, 0.3), se
     for f in fractions:
         fed = set(pool[: int(f * len(ids))]) - holdout
         r = evaluate_split(pd.concat([small, large[large.workload_id.isin(fed)]]), test)
-        for name in ("Classical-only", "Rules (exact transpile)", "AI: decision tree", "AI: gradient boosting"):
+        for name in ("Classical-only", "Rules (exact transpile)", "Rules + R3 entanglement check",
+                     "AI: decision tree", "AI: gradient boosting"):
             m = r["metrics"][name]
             rows.append({"feedback (share of large workloads)": f, "allocator": name,
                          "accuracy": m["Decision accuracy (vs oracle)"], "regret": m["Mean regret (cost units)"]})
@@ -302,19 +324,22 @@ def allocate_one(family: str, size: int, reps: int, entanglement: str, seed: int
     penalty = load_environment()["scenarios"]["failure_penalty_s"]
     tree, gbt = fit_learned(X_all, tasks.oracle_label, mistake_cost(tasks, penalty))
     rules = decide(prof_one[0])
+    bound = workload_entanglement_bound(w)
+    rules_r3 = decide(replace(prof_one[0], low_entanglement=bound <= load_rules()["low_entanglement_max_ebits"]))
     proba = dict(zip(gbt.classes_, gbt.predict_proba(X_one)[0]))
     p = pred_one.iloc[0]
     lines = [f"TASK  {w.name} on {backend}  |  " + ", ".join(f"{k}={v:g}" for k, v in conditions.items()),
              f"Phase 2 prediction: {p.two_qubit_gates:.0f} two-qubit gates, depth {p.depth:.0f}, "
              f"F={rules.derived['fidelity']:.3g}, shots {rules.derived['shots']:.3g}", "",
              f"Phase 1 rules (on predicted fields):  {rules.decision} via {rules.fired_rule}: {rules.trace[-1]['reason']}",
+             f"  + R3 entanglement check ({bound} ebits): {rules_r3.decision} via {rules_r3.fired_rule}",
              f"Phase 3 AI (gradient boosting):       {gbt.predict(X_one)[0]}  "
              + "  ".join(f"P({k})={v:.2f}" for k, v in sorted(proba.items(), key=lambda kv: -kv[1])),
              f"Phase 3 AI (decision tree):           {tree.predict(X_one)[0]}, because:"]
     lines += [f"    {c}" for c in tree_path(tree, X_one)]
     if compare:
         exact = label(w, backend)
-        truth = t | exact | {"entanglement_bound": workload_entanglement_bound(w),
+        truth = t | exact | {"entanglement_bound": bound,
                              "queue_real_min": conditions["queue_wait_min"]}  # nominal queue for the demo
         o = oracle(truth)
         lines += ["", f"GROUND TRUTH (exact transpile: {exact['two_qubit_gates']} two-qubit gates; "

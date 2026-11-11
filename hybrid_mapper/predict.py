@@ -17,6 +17,7 @@ import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.linear_model import Ridge
 from sklearn.metrics import r2_score
+from sklearn.model_selection import GroupShuffleSplit
 
 from hybrid_mapper.backends import get_backend, load_backends
 from hybrid_mapper.dataset import DATA_PATH, LABELS
@@ -142,10 +143,16 @@ def profile_from_features(row: dict, two_qubit_gates, depth, measurement_groups,
 
 # ---------------------------------------------------------------- evaluation
 
+CIRCUIT = ["family", "entanglement", "n_qubits", "reps", "seed"]  # one circuit, compiled for each backend
+
+
 def splits(df: pd.DataFrame, seed: int = 0) -> dict:
-    test_idx = df.sample(frac=0.25, random_state=seed).index
+    """Held-out circuits go to test on every backend at once: the same circuit on the other backend shares
+    its measurement groups and most of its gate count, so a row-wise split would leak labels into training."""
+    groups = df[CIRCUIT].astype(str).agg("-".join, axis=1)
+    tr, te = next(GroupShuffleSplit(test_size=0.25, random_state=seed).split(df, groups=groups))
     return {
-        "interpolation (random 25% held out)": (df.drop(test_idx), df.loc[test_idx]),
+        "interpolation (random 25% of circuits held out)": (df.iloc[tr], df.iloc[te]),
         f"extrapolation (train n<={EXTRAPOLATION_CUTOFF}, test n>{EXTRAPOLATION_CUTOFF})":
             (df[df.n_qubits <= EXTRAPOLATION_CUTOFF], df[df.n_qubits > EXTRAPOLATION_CUTOFF]),
     }

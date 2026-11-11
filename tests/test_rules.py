@@ -49,3 +49,9 @@ def test_profile_json_roundtrip():
     assert TaskProfile.from_json(p.to_json()) == p
     with pytest.raises(ValueError):
         TaskProfile(task_id="x", problem_class="bogus", algorithm="none")
+
+
+@pytest.mark.parametrize("bad", [{"n_qubits": -1}, {"eplg": 1.5}, {"precision_target": 0}])
+def test_profile_rejects_impossible_values(bad):
+    with pytest.raises(ValueError):
+        TaskProfile(task_id="x", problem_class="chem", algorithm="vqe", **bad)

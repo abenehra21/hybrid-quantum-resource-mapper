@@ -2,7 +2,8 @@ import pytest
 from qiskit import QuantumCircuit
 from qiskit.circuit.library import efficient_su2
 
-from hybrid_mapper.environment import entanglement_bound, evaluate_action, flatten, oracle
+from hybrid_mapper.environment import evaluate_action, flatten, oracle
+from hybrid_mapper.profiler import entanglement_bound
 
 
 @pytest.mark.parametrize("entanglement,reps,expected", [("reverse_linear", 2, 2), ("circular", 2, 4)])

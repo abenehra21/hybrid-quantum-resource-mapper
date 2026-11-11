@@ -286,7 +286,7 @@ flowchart LR
   <p>Everything runs on a laptop with no IBM account. Fake backends carry real device layouts and calibration data, and qiskit-aer simulates noise.</p>
 <pre><span class="dim"># one-time setup (Python 3.11+)</span>
 python3 -m venv .venv &amp;&amp; .venv/bin/pip install -e ".[test]"
-.venv/bin/pytest                                   <span class="dim"># 29 tests, ~8 s</span>
+.venv/bin/pytest                                   <span class="dim"># 34 tests, ~11 s</span>
 
 <span class="k">python -m hybrid_mapper demo</span>                       <span class="dim"># guided tour of all three phases, ~20 s</span>
 python -m hybrid_mapper demo --phase 3             <span class="dim"># one phase only</span>
@@ -537,7 +537,7 @@ flowchart LR
     <tr><th>Rule</th><th>Fires when</th><th>Route</th><th>Why</th></tr>
     <tr><td>R1</td><td>problem_class = classical or algorithm = none</td><td><span class="chip c-classical">CLASSICAL</span></td><td>No quantum formulation, nothing to map</td></tr>
     <tr><td>R2</td><td>16 · 2ⁿ bytes ≤ 16 GiB (n ≤ 30)</td><td><span class="chip c-classical">CLASSICAL</span></td><td>Exact simulation beats a noisy QPU with a queue</td></tr>
-    <tr><td>R3</td><td>low_entanglement</td><td><span class="chip c-classical">CLASSICAL</span></td><td>Tensor networks handle it</td></tr>
+    <tr><td>R3</td><td>low_entanglement (bound ≤ 12 ebits)</td><td><span class="chip c-classical">CLASSICAL</span></td><td>Tensor networks handle it. The profiler bounds entanglement from the circuit: each two-qubit gate crossing a cut of the qubit line at most doubles the Schmidt rank there, so exact MPS needs bond dimension ≤ 2<sup>bound</sup></td></tr>
     <tr><td>R4</td><td>classical_meets_target</td><td><span class="chip c-classical">CLASSICAL</span></td><td>The QPU would add cost, not value</td></tr>
     <tr><td>R5</td><td>n_qubits &gt; QPU qubits</td><td><span class="chip c-redesign">REDESIGN</span></td><td>Does not fit: cut, shrink, or fragment</td></tr>
     <tr><td>R6</td><td>F &lt; F_min[kind]: expect 0.05, sample 0.01, recover 10⁻⁴</td><td><span class="chip c-redesign">REDESIGN</span></td><td>Output would be mostly noise for this algorithm</td></tr>
@@ -682,7 +682,7 @@ flowchart LR
   </table></div>
   <ul>
     <li><strong>The power-law beats the analytic baseline on every target.</strong> It learns the SWAP overhead that 2·p·|E| misses.</li>
-    <li><strong>Trees are as good in range</strong> (98.7% decision agreement on the random split for both), but fall behind on larger sizes. That is the textbook tree failure mode, and the same lesson returns in Phase 3.</li>
+    <li><strong>Trees are as good in range</strong> (100% decision agreement for both when 25% of circuits are held out; whole circuits are held out on both backends at once, because a row-wise split leaks the same circuit's labels from the other backend), but fall behind on larger sizes. That is the textbook tree failure mode, and the same lesson returns in Phase 3.</li>
     <li><strong>Execution outcomes</strong> (runtime, energy, error) are fitted leave-one-out on only 7 hybrid runs. The power-law beats a mean predictor (runtime MAE 11.7 s vs 36.8 s), but n = 7 means this only shows the pipeline works.</li>
   </ul>
 </section>
@@ -780,7 +780,8 @@ flowchart LR
   <div class="tbl"><table>
     <tr><th>Allocator</th><th>Type</th><th>What it sees</th></tr>
     <tr><td>Classical-only, Quantum-only</td><td>Single-platform baselines from the proposal</td><td>Nothing</td></tr>
-    <tr><td>Rules (exact transpile)</td><td>Phase 1 as built</td><td>Exact circuit fields, hand-set thresholds</td></tr>
+    <tr><td>Rules (exact transpile)</td><td>Phase 1 as originally specified</td><td>Exact circuit fields, hand-set thresholds, R3 never firing</td></tr>
+    <tr><td>Rules + R3 entanglement check</td><td>Fairness check</td><td>The same, with R3 fed the circuit's entanglement bound</td></tr>
     <tr><td>Rules + Phase 2 predictions</td><td>Augment</td><td>Predicted fields, no transpile</td></tr>
     <tr><td>Rules, tuned thresholds</td><td>Augment</td><td>Grid search over statevector memory and F_min[expect], F_min[sample] (100 combinations) minimising training regret</td></tr>
     <tr><td>AI: decision tree</td><td>Replace, interpretable</td><td>Depth 4, balanced classes, printable as if-then rules</td></tr>
@@ -803,6 +804,7 @@ flowchart LR
     <tr><td>Classical-only</td><td class="num">67.3%</td><td class="num">0.27</td><td class="num">67.3%</td><td class="num">1,176</td><td class="num">0</td><td class="num">0%</td></tr>
     <tr><td>Quantum-only</td><td class="num">12.7%</td><td class="num">0.08</td><td class="num">26.4%</td><td class="num">75,746</td><td class="num">1,772</td><td class="num">67%</td></tr>
     <tr><td>Rules (exact transpile)</td><td class="num">54.6%</td><td class="num">0.50</td><td class="num">56.0%</td><td class="num">2,855</td><td class="num">28.3</td><td class="num">6.0%</td></tr>
+    <tr><td>Rules + R3 entanglement check</td><td class="num">75.1%</td><td class="num">0.63</td><td class="num">75.1%</td><td class="num">1,397</td><td class="num">8.2</td><td class="num">4.6%</td></tr>
     <tr><td>Rules + Phase 2 predictions</td><td class="num">54.5%</td><td class="num">0.50</td><td class="num">55.9%</td><td class="num">2,860</td><td class="num">28.3</td><td class="num">6.0%</td></tr>
     <tr><td>Rules, tuned thresholds</td><td class="num">57.5%</td><td class="num">0.51</td><td class="num">58.5%</td><td class="num">2,460</td><td class="num">22.6</td><td class="num">3.6%</td></tr>
     <tr><td>AI: decision tree</td><td class="num">96.7%</td><td class="num">0.93</td><td class="num">96.7%</td><td class="num best">285</td><td class="num">23.4</td><td class="num">0%</td></tr>
@@ -812,6 +814,8 @@ flowchart LR
   <h3>What to take from it</h3>
   <ul>
     <li><strong>Replace beats augment.</strong> Predicted fields leave the rules unchanged (54.5%) and tuning the thresholds adds 3 points. No threshold can express "weakly entangled circuits are classically easy".</li>
+    <li><strong>The fair comparison still favours the AI.</strong> Give the rules the one feature they lack (R3 fed the entanglement bound) and they reach 75% with half the regret, but they stay far behind 97%. What remains are interactions no single threshold expresses: the Max-Cut heuristic against the ratio target, and low-F sampling rescued by extra shots.</li>
+    <li><strong>It is not one lucky split.</strong> Over 5 random workload splits, gradient boosting averages 98.3% ± 0.7% accuracy and regret 221 ± 154. The tree is as accurate (97.2% ± 0.4%) but its regret swings (494 ± 751), because a few expensive mistakes dominate the mean.</li>
     <li><strong>Classical-only is a strong baseline.</strong> Its regret is lower than the rules', because classical failures are cheap and quantum failures are not. That matches the proposal's instinct that classical should be the default.</li>
     <li><strong>The AI never chose the QPU when classical would do</strong> (0% unnecessary QPU use) and used less QPU time than the oracle needed on average.</li>
   </ul>
@@ -872,7 +876,7 @@ flowchart LR
   <h3>The feedback curve (Function 6 in miniature)</h3>
   <p>Start from the extrapolation split. Move a share of the large workloads into training as "execution feedback", and score on a fixed 70% of large workloads that are never fed back.</p>
   <div class="chart" id="ch_fb" role="img" aria-label="Mean regret against share of large workloads fed back"></div>
-  <div class="note win"><span class="tag">The result to lead with</span><p>Feeding back 10% of the large workloads cuts gradient-boosting regret from 5,753 to 2,268. At 30% it reaches 397, below classical-only (1,613) and far below the static rules (5,340), which cannot learn at all. That is the proposal's research hypothesis, that adaptive allocation beats static rules by learning from observed behaviour, demonstrated in simulation.</p></div>
+  <div class="note win"><span class="tag">The result to lead with</span><p>Feeding back 10% of the large workloads cuts gradient-boosting regret from 5,753 to 2,268. At 30% it reaches 397, below classical-only (1,613), the rules with the entanglement check (2,290) and the static rules (5,340), none of which can learn. That is the proposal's research hypothesis, that adaptive allocation beats static rules by learning from observed behaviour, demonstrated in simulation.</p></div>
 </section>
 
 <section class="part" id="p3-demo">
@@ -952,6 +956,9 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
 
   <h3>Methodology</h3>
   <details class="qa"><summary>Isn't Phase 3 circular? You built an oracle with effects the rules ignore, then showed AI learns them.</summary><div class="a"><p>It is a simulation study, and we say so. The question it answers is narrower than "does AI beat hardware": can an allocator recover these effects from features available before execution, and does it adapt when given new outcomes? Each effect in the oracle comes from the literature (Vidal on MPS, Goemans–Williamson, published QAOA bounds, measured readout error), not invented to favour the AI. The decisive test is Phase 5, and the pipeline retrains unchanged on real outcomes.</p></div></details>
+  <details class="qa"><summary>Isn't the rules baseline a strawman? R3 exists but never fires in your Phase 3 numbers.</summary><div class="a"><p>We checked that directly. The profiler now computes an entanglement bound from the circuit and sets R3 from it, and Phase 3 reports that variant as its own column. It is the fairest rules baseline: 75% accuracy and regret 1,397, against 55% and 2,855 without it. The AI still reaches 97% with regret 285–420. The rules' remaining mistakes are interactions no single threshold captures, such as the Max-Cut heuristic's 0.878 guarantee against a 0.9 target, or a low-fidelity sampling task that a large shot budget rescues.</p></div></details>
+  <details class="qa"><summary>Is 97% just one lucky train/test split?</summary><div class="a"><p>No. Repeating the 70/30 workload split with 5 seeds gives 98.3% ± 0.7% accuracy and regret 221 ± 154 for gradient boosting. The decision tree is as accurate (97.2% ± 0.4%) but its regret varies much more (494 ± 751), because a handful of expensive mistakes dominate a mean. That is why we report regret, not only accuracy.</p></div></details>
+  <details class="qa"><summary>How do you know your Phase 2 test set doesn't leak?</summary><div class="a"><p>Each circuit is compiled for two backends, and its measurement groups are identical on both. A row-wise random split would put one copy in training and the other in test. We hold out whole circuits on both backends at once; a test checks no circuit appears on both sides. The extrapolation split (train ≤ 40 qubits, test above) cannot leak by construction.</p></div></details>
   <details class="qa"><summary>How do you know whether a decision was correct?</summary><div class="a"><p>For small instances we run every option for real (Phase 1 baselines) and the cheapest option meeting the accuracy target is the oracle label. For large instances we use the ground-truth model. Decisions are scored by accuracy, macro-F1, success rate and regret: the extra cost over the oracle's choice, with failures charged their wasted resources plus a penalty.</p></div></details>
   <details class="qa"><summary>Why does classical-only have lower regret than your rules?</summary><div class="a"><p>Because the costs are asymmetric. A classical attempt that fails is cheap; a QPU job that fails wastes queue time, QPU time and energy. Classical-only fails on a third of tasks, but cheaply. The rules sometimes send doomed jobs to the QPU. This supports the proposal's instinct that classical should be the default, and it is why the gradient-boosting allocator is trained cost-sensitively.</p></div></details>
   <details class="qa"><summary>Your AI's regret is worse than classical-only on larger problems. Doesn't that sink it?</summary><div class="a"><p>It shows the limit of any model trained on one size range: trees predict flat beyond their data, and the HYBRID/REDESIGN boundary was learned from very few large examples. Its accuracy is still 86% against 33% for the rules. The feedback curve is the answer: with 10% of large workloads fed back, regret drops from 5,753 to 2,268, and at 30% to 397, below every baseline. In deployment you pair a learned allocator with a conservative default for out-of-range inputs and retrain as feedback arrives.</p></div></details>
@@ -979,7 +986,7 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
     <li><strong>Fidelity model.</strong> (1 − EPLG)^N ignores single-qubit, readout (in Phase 1), idling and crosstalk errors.</li>
     <li><strong>Mitigation overhead.</strong> 1/F² is a rough multiplier; real PEC/ZNE/PEA costs depend on the method and noise.</li>
     <li><strong>Thresholds are hypotheses.</strong> Every one is in <code>rules.yaml</code>; learning them is the point of Phase 3.</li>
-    <li><strong>Hand-supplied flags.</strong> <code>classical_meets_target</code> and <code>low_entanglement</code> are not inferred in Phase 1.</li>
+    <li><strong>One hand-supplied flag.</strong> <code>classical_meets_target</code> is not inferred. <code>low_entanglement</code> is inferred from an entanglement bound, an upper bound: a circuit may be easier to simulate than it says.</li>
     <li><strong>Topology proxy.</strong> Nighthawk is a 10×12 grid, not a calibrated device.</li>
     <li><strong>Synthetic chemistry.</strong> VQE Hamiltonians are seeded random bounded-weight Pauli sums, not molecules.</li>
     <li><strong>Simulated hybrid runs.</strong> Runtimes are projected; energy uses assumed power figures; hybrid accuracy reflects a capped SPSA budget.</li>
@@ -1241,7 +1248,7 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
   const el = (tag, attrs, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
   function allocChart(){
     const rows = [["Classical-only",67.3,1176,"var(--classical)"],["Quantum-only",12.7,75746,"var(--accent)"],["Rules (exact)",54.6,2855,"var(--faint)"],
-      ["Rules + predictions",54.5,2860,"var(--faint)"],["Rules, tuned",57.5,2460,"var(--faint)"],["AI: decision tree",96.7,285,"var(--hybrid)"],["AI: boosting",97.1,420,"var(--hybrid)"]];
+      ["Rules + predictions",54.5,2860,"var(--faint)"],["Rules, tuned",57.5,2460,"var(--faint)"],["Rules + R3 check",75.1,1397,"var(--faint)"],["AI: decision tree",96.7,285,"var(--hybrid)"],["AI: boosting",97.1,420,"var(--hybrid)"]];
     const W = 720, rowH = 30, top = 34, left = 150, barW = 400, H = top + rows.length*rowH + 30;
     const s = el("svg", {viewBox:`0 0 ${W} ${H}`, width:W, height:H});
     s.appendChild(el("text", {x:left, y:16, fill:"var(--muted)", "font-family":"var(--display)", "font-size":12, "font-weight":700}, "Decision accuracy vs oracle (held-out workloads)"));
@@ -1261,6 +1268,7 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
       ["AI: gradient boosting",[5753,5973,2268,1674,397],"var(--hybrid)",false],
       ["AI: decision tree",[8968,9136,9034,4632,1234],"var(--accent)",false],
       ["Rules (exact transpile)",[5340,5340,5340,5340,5340],"var(--redesign)",true],
+      ["Rules + R3 check",[2290,2290,2290,2290,2290],"var(--muted)",true],
       ["Classical-only",[1613,1613,1613,1613,1613],"var(--classical)",true]];
     const W = 720, H = 330, L = 64, R = 190, T = 22, B = 46, yMax = 10000;
     const X = v => L + (W-L-R)*v/30, Y = v => T + (H-T-B)*(1 - v/yMax);

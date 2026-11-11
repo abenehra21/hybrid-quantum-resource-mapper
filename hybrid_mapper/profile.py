@@ -35,6 +35,14 @@ class TaskProfile:
             raise ValueError(f"problem_class must be one of {sorted(PROBLEM_CLASSES)}, got {self.problem_class!r}")
         if self.algorithm not in ALGORITHMS:
             raise ValueError(f"algorithm must be one of {sorted(ALGORITHMS)}, got {self.algorithm!r}")
+        for name in ("n_qubits", "depth", "two_qubit_gates", "measurement_groups", "samples_needed",
+                     "sum_abs_coeffs", "throughput_per_s", "queue_wait_min", "shot_budget"):
+            if getattr(self, name) < 0:
+                raise ValueError(f"{name} must be >= 0, got {getattr(self, name)!r}")
+        if not 0 <= self.eplg <= 1:
+            raise ValueError(f"eplg is an error probability in [0, 1], got {self.eplg!r}")
+        if self.precision_target <= 0 or self.deadline_min <= 0:
+            raise ValueError("precision_target and deadline_min must be > 0")
 
     def to_dict(self) -> dict:
         return asdict(self)

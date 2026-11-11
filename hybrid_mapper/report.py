@@ -1,4 +1,4 @@
-"""Write results/phase1_baselines.md and results/phase2_prediction.md from the logs and dataset."""
+"""Write results/phase{1,2,3}_*.md from the baseline log, the resource dataset and the task set."""
 import math
 from pathlib import Path
 
@@ -161,8 +161,17 @@ a decision that yields no accepted result also pays a {env['scenarios']['failure
     for name, r in results.items():
         table = pd.DataFrame(r["metrics"]).reset_index().rename(columns={"index": "Metric"})
         parts.append(f"## Held-out evaluation: {name}\n\n{md_table(table)}\n")
+    parts.append("## Stability: 5 random workload splits\n\n"
+                 "The table above is one split. Repeating the 70/30 workload split with 5 seeds gives mean ± "
+                 "standard deviation, so the comparison does not rest on one lucky draw.\n\n"
+                 + md_table(al.stability(tasks)) + "\n")
     parts.append("## Why the rules disagree with the oracle (random split)\n\n"
                  + md_table(al.disagreements(first, "Rules (exact transpile)")) + "\n")
+    parts.append("## What the rules still miss with the R3 entanglement check (random split)\n\n"
+                 "Feeding R3 the circuit's entanglement bound removes the MPS mistakes. What remains are effects "
+                 "no single threshold captures: the Max-Cut heuristic's guarantee against the accuracy target, "
+                 "low-fidelity sampling rescued by extra shots, and budgets and deadlines interacting.\n\n"
+                 + md_table(al.disagreements(first, "Rules + R3 entanglement check")) + "\n")
     parts.append("## Where the gradient-boosting allocator still errs (random split)\n\n"
                  + md_table(al.disagreements(first, "AI: gradient boosting")) + "\n")
     for who in ("Rules (exact transpile)", "AI: gradient boosting"):
@@ -173,7 +182,9 @@ a decision that yields no accepted result also pays a {env['scenarios']['failure
 
 Grid search over `rules.yaml` minimising training regret chose statevector memory
 {tuned['statevector_memory_gib']} GiB and F_min = {tuned['fidelity_min']}. Tuning helps a little, but no
-threshold can express "weakly entangled circuits are classically easy": that needs features the rules lack.
+threshold can express "weakly entangled circuits are classically easy": that needs a feature the rules lack.
+Adding that one feature (R3 fed the entanglement bound) is worth far more than tuning; the learned allocators
+still beat it because they also learn the remaining interactions listed above.
 
 ## The learned decision tree (replace, random split)
 

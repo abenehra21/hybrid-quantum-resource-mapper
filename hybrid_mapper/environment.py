@@ -18,10 +18,7 @@ import math
 from functools import cache
 from pathlib import Path
 
-import networkx as nx
-import numpy as np
 import yaml
-from qiskit import transpile
 
 from hybrid_mapper.backends import CONFIG_DIR, get_backend
 from hybrid_mapper.rules import KIND, load_rules
@@ -33,38 +30,6 @@ ACTIONS = ["CLASSICAL", "HYBRID", "REDESIGN"]
 @cache
 def load_environment(path: Path = CONFIG_DIR / "environment.yaml") -> dict:
     return yaml.safe_load(Path(path).read_text())
-
-
-def entanglement_bound(circuit, order: list[int] | None = None) -> int:
-    """Upper bound on the entanglement (in ebits) across any cut of the qubit line.
-
-    Each CZ gate that crosses a cut can at most double the Schmidt rank there, and a cut with k qubits
-    on its smaller side holds at most k ebits. An exact matrix-product-state simulation therefore needs
-    bond dimension at most 2**bound. order[q] is qubit q's position on the MPS chain.
-    """
-    n = circuit.num_qubits
-    if n < 2:
-        return 0
-    dec = transpile(circuit.remove_final_measurements(inplace=False), basis_gates=["cz", "rz", "sx", "x"],
-                    optimization_level=0)
-    pos = order or list(range(n))
-    diff = np.zeros(n + 1, dtype=int)
-    for inst in dec.data:
-        if inst.operation.num_qubits == 2:
-            a, b = sorted(pos[dec.find_bit(q).index] for q in inst.qubits)
-            diff[a + 1] += 1  # the gate crosses every cut k with a < k <= b
-            diff[b + 1] -= 1
-    crossings = np.cumsum(diff)[1:n]
-    k = np.arange(1, n)
-    return int(np.max(np.minimum(crossings, np.minimum(k, n - k))))
-
-
-def workload_entanglement_bound(workload) -> int:
-    if workload.graph is not None:  # an MPS simulator would reorder graph nodes to shrink cuts
-        ordering = list(nx.utils.reverse_cuthill_mckee_ordering(workload.graph))
-        position = {node: i for i, node in enumerate(ordering)}
-        return entanglement_bound(workload.circuit, [position[q] for q in range(workload.circuit.num_qubits)])
-    return entanglement_bound(workload.circuit)
 
 
 def classical_option(t: dict, env: dict) -> dict:

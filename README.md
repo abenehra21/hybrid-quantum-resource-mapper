@@ -93,7 +93,7 @@ any code change.
 |------|-----------|----------|-----------|
 | R1 | `problem_class == classical` or `algorithm == none` | CLASSICAL | No quantum algorithm applies, so there is nothing to map. |
 | R2 | statevector fits in `statevector_memory_gib` (16 GiB ⇔ n ≤ 30) | CLASSICAL | Exact simulation on a workstation beats any noisy QPU run. |
-| R3 | `low_entanglement` | CLASSICAL | Tensor-network or MPS methods handle weakly entangled states efficiently. |
+| R3 | `low_entanglement` (entanglement bound ≤ 12 ebits) | CLASSICAL | Tensor-network or MPS methods handle weakly entangled states efficiently. The profiler bounds entanglement from the circuit itself: each two-qubit gate crossing a cut of the qubit line can at most double the Schmidt rank there. |
 | R4 | `classical_meets_target` | CLASSICAL | If a classical method already reaches the target, the QPU adds cost but no value. |
 | R5 | `n_qubits` > backend qubits | REDESIGN | The circuit does not fit: it needs cutting, a smaller active space, or fragmentation. |
 | R6 | `F < fidelity_min[kind]` (expect 0.05, sample 0.01, recover 1e-4) | REDESIGN | The output would be mostly noise. The tolerance depends on how much signal the algorithm can recover. |
@@ -188,7 +188,9 @@ cost no QPU time.
 | `gbt` | gradient-boosted trees on all features | strong inside the training range, but cannot extrapolate |
 
 **Results** (details in [`results/phase2_prediction.md`](results/phase2_prediction.md)). The headline test is
-*extrapolation*: train on ≤ 40 qubits and predict 50–120 qubits.
+*extrapolation*: train on ≤ 40 qubits and predict 50–120 qubits. The interpolation split holds out whole
+circuits on both backends at once; a row-wise split would let the same circuit's other-backend row leak its
+labels into training.
 
 | Target (extrapolation, MAPE) | analytic | power-law | gbt |
 |---|---|---|---|
@@ -203,8 +205,8 @@ cost no QPU time.
 
 - **The power-law model beats the analytic baseline** on every target. It learns the routing (SWAP) overhead
   that 2·p·|E| misses.
-- **Trees are as good as the power-law inside the training range** (98.7% decision agreement in both on the
-  random split), but they fall behind on larger sizes. This is the expected tree failure mode, and it is the
+- **Trees are as good as the power-law inside the training range** (100% decision agreement for both when 25%
+  of circuits are held out), but they fall behind on larger sizes. This is the expected tree failure mode, and it is the
   reason to prefer a model family that extrapolates.
 - **Speed:** predicting and deciding takes about 2 ms per task. Exact transpilation takes a median of 0.7 s,
   and 20 of 608 took over 10 s, up to 30 s.
@@ -262,27 +264,36 @@ predicted** circuit fields. The hidden quantities reach them only through the la
 **Results** on 30% of workloads never seen in training
 ([`results/phase3_allocation.md`](results/phase3_allocation.md) has everything):
 
-| | Classical-only | Quantum-only | Rules (Phase 1) | Rules, tuned thresholds | **AI: decision tree** | **AI: gradient boosting** |
-|---|---|---|---|---|---|---|
-| Decision accuracy vs oracle | 67% | 13% | 55% | 58% | **97%** | **97%** |
-| Mean regret (cost units) | 1,176 | 75,746 | 2,855 | 2,460 | **285** | 420 |
-| Unnecessary QPU use | 0% | 67% | 6.0% | 3.6% | **0%** | **0%** |
+| | Classical-only | Quantum-only | Rules (Phase 1) | Rules, tuned thresholds | Rules + R3 entanglement check | **AI: decision tree** | **AI: gradient boosting** |
+|---|---|---|---|---|---|---|---|
+| Decision accuracy vs oracle | 67% | 13% | 55% | 58% | 75% | **97%** | **97%** |
+| Mean regret (cost units) | 1,176 | 75,746 | 2,855 | 2,460 | 1,397 | **285** | 420 |
+| Unnecessary QPU use | 0% | 67% | 6.0% | 3.6% | 4.6% | **0%** | **0%** |
+
+Over 5 different random workload splits, gradient boosting averages **98.3% ± 0.7%** accuracy and regret
+**221 ± 154**. The decision tree is as accurate (97.2% ± 0.4%) but its regret varies a lot (494 ± 751), so
+one split is not the whole story.
 
 - **Replace beats augment.** Feeding the rules Phase 2 predictions (55%) or tuning their thresholds (58%)
   barely helps, because no threshold can say "weakly entangled circuits are classically easy". That needs
   features the rules don't have. 140 of the rules' 336 mistakes are exactly that case.
+- **Giving the rules that feature is the fairest comparison.** "Rules (Phase 1)" is the rule list as originally
+  specified, with R3 never firing. With R3 fed the circuit's entanglement bound, the rules reach 75% and halve
+  their regret, but the AI still wins clearly. The remaining mistakes are interactions no single threshold
+  expresses: the Max-Cut heuristic against the accuracy target, and low-fidelity sampling rescued by extra shots.
 - **The tree is interpretable.** `allocate` prints the path a task takes through it, and the report prints the
   whole tree as if-then rules, ready to compare side by side with R1–R9.
 - **Honest failure mode: extrapolation.** Trained only on ≤ 40 qubits, the AI is still far more accurate on
   larger tasks (86% vs 33%). But its errors there are expensive (QPU jobs that blow the shot budget), so its
   regret (5,816) is worse than always choosing classical (1,613).
 - **Feedback fixes it (Function 6).** Feeding back 10% of the large workloads cuts gradient-boosting regret to
-  2,270. At 30% it reaches **397**, beating both classical-only and the static rules (5,340), which cannot
-  learn at all. This is the proposal's research hypothesis, shown in simulation.
+  2,270. At 30% it reaches **397**, beating classical-only (1,613), the static rules (5,340) and the rules
+  with the entanglement check (2,290), none of which can learn. This is the proposal's research hypothesis, shown in simulation.
 
 ```
 $ python -m hybrid_mapper allocate --workload vqe --size 100 --reps 2 --compare
 Phase 1 rules (on predicted fields):  REDESIGN via R7: shots 2e+09 > budget 1e+07
+  + R3 entanglement check (2 ebits): CLASSICAL via R3
 Phase 3 AI (gradient boosting):       CLASSICAL  P(CLASSICAL)=1.00
 GROUND TRUTH (... entanglement bound 2 ebits ...)
   classical: feasible  (mps in 1 s)
@@ -323,7 +334,8 @@ tests/           pytest suite (presets, config-driven thresholds, formulas, mode
 - **Mitigation overhead.** 1/F² is a rough estimate. Real PEC/ZNE/PEA costs depend on the method and the noise.
 - **Thresholds are hypotheses.** The 30-qubit line depends on the simulating machine, and F_min values are
   starting points. All of them live in `rules.yaml`, and learning them is the point of Phase 3.
-- **Hand-supplied flags.** `classical_meets_target` and `low_entanglement` are not inferred; they default to False.
+- **Hand-supplied flag.** `classical_meets_target` is not inferred and defaults to False. `low_entanglement` is
+  inferred from an entanglement bound, which is an upper bound: a circuit can be easier to simulate than it says.
 - **Topology proxy.** nighthawk_r2 is transpiled to a 10×12 square grid, not a calibrated device model.
 - **Synthetic chemistry.** VQE Hamiltonians are seeded random bounded-weight Pauli sums (`synthetic_hamiltonian`),
   not molecular data.
