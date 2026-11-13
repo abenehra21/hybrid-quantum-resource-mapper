@@ -19,6 +19,12 @@ def two_qubit_count(circuit: QuantumCircuit) -> int:
     return sum(1 for inst in circuit.data if inst.operation.num_qubits == 2)
 
 
+def logical(circuit: QuantumCircuit) -> QuantumCircuit:
+    """The circuit in CZ + single-qubit gates, before any routing (no coupling map, no measurements)."""
+    return transpile(circuit.remove_final_measurements(inplace=False), basis_gates=["cz", "rz", "sx", "x"],
+                     optimization_level=0)
+
+
 def entanglement_bound(circuit, order: list[int] | None = None) -> int:
     """Upper bound on the entanglement (in ebits) across any cut of the qubit line.
 
@@ -29,8 +35,7 @@ def entanglement_bound(circuit, order: list[int] | None = None) -> int:
     n = circuit.num_qubits
     if n < 2:
         return 0
-    dec = transpile(circuit.remove_final_measurements(inplace=False), basis_gates=["cz", "rz", "sx", "x"],
-                    optimization_level=0)
+    dec = logical(circuit)
     pos = order or list(range(n))
     diff = np.zeros(n + 1, dtype=int)
     for inst in dec.data:

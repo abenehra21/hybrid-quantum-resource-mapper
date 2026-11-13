@@ -1,4 +1,5 @@
-"""python -m hybrid_mapper {decide,profile,baselines,dataset,predict,tasks,allocate,demo,report}"""
+"""python -m hybrid_mapper {decide,profile,baselines,dataset,predict,tasks,allocate,plans,partition,workflow,
+demo,report}"""
 import argparse
 
 from hybrid_mapper.backends import load_backends
@@ -23,9 +24,13 @@ def print_decision(profile) -> None:
     print(f"\nProfile:\n{profile.to_json()}")
 
 
-def add_workload_args(p) -> None:
-    p.add_argument("--workload", required=True, choices=["maxcut", "vqe", "random"])
-    p.add_argument("--size", type=int, required=True, help="qubits (vqe/random) or graph nodes (maxcut)")
+def add_workload_args(p, clustered: bool = False) -> None:
+    p.add_argument("--workload", required=True, choices=["maxcut", "vqe", "random"] + ["clustered"] * clustered)
+    p.add_argument("--size", type=int, required=True, help="qubits (vqe/random), graph nodes (maxcut)"
+                   + ", qubits per block (clustered)" * clustered)
+    if clustered:
+        p.add_argument("--blocks", type=int, default=3, help="clustered: number of fully entangled blocks")
+        p.add_argument("--links", type=int, default=1, help="clustered: CZ gates joining neighbouring blocks, per layer")
     p.add_argument("--backend", default="heron_r3", choices=sorted(load_backends()))
     p.add_argument("--reps", type=int, help="QAOA p / ansatz reps / random-circuit depth (default 1; 10 for random)")
     p.add_argument("--entanglement", default="reverse_linear", choices=["reverse_linear", "circular", "full"],
@@ -48,13 +53,19 @@ def conditions(args) -> dict:
             "samples_needed": args.samples}
 
 
-def build_workload(args):
+def workload_spec(args) -> tuple:
+    """((family, size, reps, entanglement, seed), builder for the workload)."""
     from hybrid_mapper.dataset import build
 
     reps = args.reps or (10 if args.workload == "random" else 1)
     entanglement = args.entanglement if args.workload == "vqe" else "none"
-    return (args.workload, args.size, reps, entanglement, args.seed), build(args.workload, args.size, reps,
-                                                                              entanglement, args.seed)
+    spec = (args.workload, args.size, reps, entanglement, args.seed)
+    return spec, lambda: build(*spec)
+
+
+def build_workload(args):
+    spec, make = workload_spec(args)
+    return spec, make()
 
 
 def predict_cmd(args) -> None:
@@ -108,9 +119,16 @@ def main(argv=None) -> None:
     add_workload_args(a)
     add_condition_args(a)
     a.add_argument("--compare", action="store_true", help="also transpile and ask the ground-truth oracle")
-    m = sub.add_parser("demo", help="guided walkthrough of Phases 1-3")
-    m.add_argument("--phase", type=int, choices=[1, 2, 3], help="run only one phase")
-    sub.add_parser("report", help="write results/phase{1,2,3}_*.md")
+    sub.add_parser("plans", help="Phase 4: execute every candidate partition in the ground truth (~1.5 min)")
+    q = sub.add_parser("partition", help="Phase 4: all four phases for one application, with its task DAG")
+    add_workload_args(q, clustered=True)
+    add_condition_args(q)
+    f = sub.add_parser("workflow", help="Phase 4: plan a multi-kernel application from config/applications.yaml")
+    f.add_argument("--name", default="screening_pipeline")
+    m = sub.add_parser("demo", help="guided walkthrough of Phases 1-4")
+    m.add_argument("--phase", type=int, choices=[1, 2, 3, 4], help="run only one phase")
+    m.add_argument("--html", action="store_true", help="refresh the data inside docs/demo.html instead")
+    sub.add_parser("report", help="write results/phase{1,2,3,4}_*.md")
     args = ap.parse_args(argv)
 
     if args.cmd == "decide":
@@ -138,10 +156,29 @@ def main(argv=None) -> None:
 
         spec, _ = build_workload(args)
         print(allocate_one(*spec, args.backend, conditions(args), args.compare))
-    elif args.cmd == "demo":
-        from hybrid_mapper.demo import run as demo
+    elif args.cmd == "plans":
+        from hybrid_mapper.partition import build_plans
 
-        demo(args.phase)
+        build_plans()
+    elif args.cmd == "partition":
+        from hybrid_mapper.partition import describe, plan_one
+
+        (family, size, reps, entanglement, seed), _ = workload_spec(args)
+        extra = {"blocks": args.blocks, "links": args.links} if family == "clustered" else {}
+        print(describe(plan_one(family, size, reps, entanglement, seed, args.backend, conditions(args), **extra)))
+    elif args.cmd == "workflow":
+        from hybrid_mapper.partition import describe_workflow, plan_workflow
+
+        print(describe_workflow(plan_workflow(args.name)))
+    elif args.cmd == "demo":
+        if args.html:
+            from hybrid_mapper.visual import write
+
+            write()
+        else:
+            from hybrid_mapper.demo import run as demo
+
+            demo(args.phase)
     else:
         from hybrid_mapper.report import run
 

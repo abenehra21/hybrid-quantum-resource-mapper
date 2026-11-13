@@ -1,0 +1,24 @@
+# Phase 4 example applications: several kernels with dependencies, planned together into one task DAG.
+# These are illustrative pipelines assembled from the benchmark kernels (the chemistry is synthetic).
+# Each kernel takes the options of `python -m hybrid_mapper partition`; `after` lists the kernels it waits for.
+
+screening_pipeline:
+  description: Place a 120-node interaction graph, evaluate a modular 78-qubit ansatz, sample a deep 50-qubit circuit.
+  backend: heron_r3
+  conditions: {precision_target: 0.05, maxcut_ratio_target: 0.9, deadline_min: 480, queue_wait_min: 30,
+               shot_budget: 1.0e+7, samples_needed: 1.0e+5}
+  kernels:
+    placement: {workload: maxcut, size: 120, reps: 1}
+    energy: {workload: clustered, size: 26, blocks: 3, links: 1, reps: 1, after: [placement]}
+    sampling: {workload: random, size: 50, reps: 20, shot_budget: 1.0e+8, samples_needed: 1.0e+4, after: [placement]}
+    refine: {workload: vqe, size: 100, reps: 2, after: [energy, sampling]}
+
+tight_deadline:
+  description: The same pipeline with a 30-minute deadline and a dense 4x30-qubit ansatz that cutting cannot rescue in time.
+  backend: heron_r3
+  conditions: {precision_target: 0.05, maxcut_ratio_target: 0.9, deadline_min: 30, queue_wait_min: 5,
+               shot_budget: 1.0e+7, samples_needed: 1.0e+5}
+  kernels:
+    placement: {workload: maxcut, size: 120, reps: 1}
+    energy: {workload: clustered, size: 30, blocks: 4, links: 2, reps: 2, after: [placement]}
+    sampling: {workload: random, size: 36, reps: 10, after: [placement]}

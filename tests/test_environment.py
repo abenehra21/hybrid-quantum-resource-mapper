@@ -43,3 +43,11 @@ def test_regret_is_zero_for_the_oracle_choice_and_penalises_failures():
     row = t | flatten(oracle(t))
     assert evaluate_action("HYBRID", row, 3600)["regret"] == 0
     assert evaluate_action("REDESIGN", row, 3600)["regret"] == 3600
+
+
+def test_small_maxcut_is_solved_exactly_but_large_needs_the_heuristic():
+    small = _task(family="maxcut", n_qubits=20, n_edges=30, reps=1, maxcut_ratio_target=0.9)
+    assert oracle(small)["label"] == "CLASSICAL" and oracle(small)["classical"]["method"] == "exact"
+    large = small | {"n_qubits": 100, "n_edges": 150}
+    assert oracle(large)["label"] == "REDESIGN"  # enumeration is hopeless and 0.878 < 0.9
+    assert oracle(large | {"maxcut_ratio_target": 0.85})["classical"]["method"] == "heuristic"

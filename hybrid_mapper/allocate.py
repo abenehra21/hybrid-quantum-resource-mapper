@@ -9,6 +9,8 @@ Allocators compared on the same held-out tasks (the proposal's evaluation table,
   Rules, tuned thresholds          augment: rules.yaml thresholds fitted to minimise training regret
   AI: decision tree (depth 4)      replace: an interpretable learned policy, printable as if-then rules
   AI: gradient boosting            replace: the strongest learned policy
+  AI + range guard                 gradient boosting inside the sizes it was trained on, rules + R3 beyond
+                                   them (a learned policy is confidently wrong out of range)
   Oracle                           ground truth from environment.py (the label being learned)
 
 The learned allocators see only what is known before execution: problem-level features, operating
@@ -17,6 +19,7 @@ effects reach them only through the oracle labels they are trained on.
 """
 import math
 from dataclasses import replace
+from functools import cache
 from itertools import product
 from pathlib import Path
 
@@ -40,6 +43,13 @@ CONDITIONS = ["precision_target", "maxcut_ratio_target", "deadline_min", "queue_
 ONE_HOT = {"family": ["maxcut", "vqe", "random"], "backend": ["heron_r3", "nighthawk_r2"],
            "entanglement": ["none", "reverse_linear", "circular", "full"]}
 EXTRAPOLATION_CUTOFF = 40
+
+
+def trusted_qubits(train: pd.DataFrame) -> float:
+    """Largest size a learned policy is trusted at: at least 5% of its training tasks are this large or
+    larger. Beyond it the rules decide (range guard), because a learned policy is confidently wrong on
+    sizes it has barely seen. The range widens by itself as execution feedback for larger tasks arrives."""
+    return float(np.quantile(train.n_qubits, 0.95, method="lower"))
 
 
 # ---------------------------------------------------------------- task generation
@@ -154,6 +164,48 @@ def fit_learned(X: pd.DataFrame, y: pd.Series, weight: np.ndarray | None = None)
     return tree.fit(X, y), gbt.fit(X, y, sample_weight=w)
 
 
+class Allocator:
+    """The Phase 2 predictor and the Phase 3 learned policies, fitted once on a set of labelled tasks.
+    The Phase 4 planner calls decide() for every subtask of every candidate partition."""
+
+    def __init__(self, tasks: pd.DataFrame):
+        tasks = tasks.reset_index(drop=True)
+        penalty = load_environment()["scenarios"]["failure_penalty_s"]
+        self.predictor = ResourcePredictor("power-law").fit(tasks.drop_duplicates("workload_id"))
+        self.tree, self.gbt = fit_learned(self.inputs(tasks)[2], tasks.oracle_label, mistake_cost(tasks, penalty))
+        self.max_qubits = trusted_qubits(tasks)  # range guard: beyond this the rules decide
+
+    def inputs(self, rows: pd.DataFrame) -> tuple:
+        """(Phase 2 predicted fields, Phase 1 profiles built on them, Phase 3 feature table)."""
+        rows = rows.reset_index(drop=True)
+        pred = self.predictor.predict(rows)
+        profs = profiles(rows, pred)
+        return pred, profs, features(rows, pred, profs)
+
+    def decide(self, rows: pd.DataFrame) -> pd.DataFrame:
+        """Per task: predicted fields, the rule decision on them (R3 fed the entanglement bound when the
+        rows carry one) and the AI decision with its class probabilities. The AI decision is gradient
+        boosting inside the range of sizes it was trained on and the rule decision beyond it (`guarded`)."""
+        pred, profs, X = self.inputs(rows)
+        if "entanglement_bound" in rows:
+            max_ebits = load_rules()["low_entanglement_max_ebits"]
+            profs = [replace(p, low_entanglement=bool(b <= max_ebits)) for p, b in zip(profs, rows.entanglement_bound)]
+        decisions = [decide(p) for p in profs]
+        rules = np.array([d.decision for d in decisions])
+        guarded = rows.n_qubits.to_numpy() > self.max_qubits
+        proba = np.where(guarded[:, None], rules[:, None] == self.gbt.classes_, self.gbt.predict_proba(X))
+        out = pred.assign(rules=rules, rule=[d.fired_rule for d in decisions],
+                          fidelity=[d.derived["fidelity"] for d in decisions], shots=[d.derived["shots"] for d in decisions],
+                          ai=np.where(guarded, rules, self.gbt.predict(X)), guarded=guarded)
+        return out.join(pd.DataFrame(proba.astype(float), columns=[f"p_{c}" for c in self.gbt.classes_]))
+
+
+@cache
+def default_allocator() -> Allocator:
+    """Trained on every labelled task: for the CLI and the demos, never for held-out evaluation."""
+    return Allocator(load_tasks())
+
+
 def metrics(actions, tasks: pd.DataFrame, penalty: float) -> dict:
     actions = np.asarray(actions)
     labels = tasks.oracle_label.to_numpy()
@@ -186,16 +238,20 @@ def evaluate_split(train: pd.DataFrame, test: pd.DataFrame) -> dict:
     tree, gbt = fit_learned(X_tr, train.oracle_label, mistake_cost(train, penalty))
     exact_te = profiles(test, test[LABELS])
     max_ebits = load_rules()["low_entanglement_max_ebits"]
+    rules_r3 = [decide(replace(p, low_entanglement=bool(b <= max_ebits))).decision
+                for p, b in zip(exact_te, test.entanglement_bound)]
+    boosted = gbt.predict(X_te)
     actions = {
         "Classical-only": ["CLASSICAL"] * len(test),
         "Quantum-only": ["HYBRID"] * len(test),
         "Rules (exact transpile)": [decide(p).decision for p in exact_te],
-        "Rules + R3 entanglement check": [decide(replace(p, low_entanglement=bool(b <= max_ebits))).decision
-                                          for p, b in zip(exact_te, test.entanglement_bound)],
+        "Rules + R3 entanglement check": rules_r3,
         "Rules + Phase 2 predictions": [decide(p).decision for p in prof_te],
         "Rules, tuned thresholds": [decide(p, cfg=tuned).decision for p in prof_te],
         "AI: decision tree": list(tree.predict(X_te)),
-        "AI: gradient boosting": list(gbt.predict(X_te)),
+        "AI: gradient boosting": list(boosted),
+        # the learned policy inside the sizes it was trained on, the rules beyond them
+        "AI + range guard": list(np.where(test.n_qubits > trusted_qubits(train), rules_r3, boosted)),
         "Oracle": list(test.oracle_label),
     }
     return {"actions": actions, "metrics": {k: metrics(a, test, penalty) for k, a in actions.items()},
@@ -239,7 +295,7 @@ def feedback_curve(tasks: pd.DataFrame, fractions=(0.0, 0.05, 0.1, 0.2, 0.3), se
         fed = set(pool[: int(f * len(ids))]) - holdout
         r = evaluate_split(pd.concat([small, large[large.workload_id.isin(fed)]]), test)
         for name in ("Classical-only", "Rules (exact transpile)", "Rules + R3 entanglement check",
-                     "AI: decision tree", "AI: gradient boosting"):
+                     "AI: decision tree", "AI: gradient boosting", "AI + range guard"):
             m = r["metrics"][name]
             rows.append({"feedback (share of large workloads)": f, "allocator": name,
                          "accuracy": m["Decision accuracy (vs oracle)"], "regret": m["Mean regret (cost units)"]})
@@ -311,18 +367,12 @@ def allocate_one(family: str, size: int, reps: int, entanglement: str, seed: int
     """Rules vs AI for one task (trained on all tasks); with compare, also transpile and ask the oracle."""
     from hybrid_mapper.dataset import label, problem_features
 
-    tasks = load_tasks()
     w = build(family, size, reps, entanglement, seed)
     t = problem_features(family, size, reps, entanglement, seed, workload=w) | {"backend": backend} | conditions
     t["workload_id"] = workload_id(t)
-    one = pd.DataFrame([t])
-    predictor = ResourcePredictor("power-law").fit(load_dataset())
-    pred_all, pred_one = predictor.predict(tasks), predictor.predict(one)
-    X_all = features(tasks, pred_all, profiles(tasks, pred_all))
-    prof_one = profiles(one, pred_one)
-    X_one = features(one, pred_one, prof_one)
-    penalty = load_environment()["scenarios"]["failure_penalty_s"]
-    tree, gbt = fit_learned(X_all, tasks.oracle_label, mistake_cost(tasks, penalty))
+    al = default_allocator()
+    tree, gbt = al.tree, al.gbt
+    pred_one, prof_one, X_one = al.inputs(pd.DataFrame([t]))
     rules = decide(prof_one[0])
     bound = workload_entanglement_bound(w)
     rules_r3 = decide(replace(prof_one[0], low_entanglement=bound <= load_rules()["low_entanglement_max_ebits"]))

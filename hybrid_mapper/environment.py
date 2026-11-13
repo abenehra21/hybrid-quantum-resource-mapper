@@ -6,7 +6,7 @@ It deliberately models effects the Phase 1 rules do not:
   * tensor-network (MPS) simulation: weakly entangled circuits are classically easy at any width
     (Vidal 2003), so "more than 30 qubits" does not imply "needs a QPU";
   * strong classical heuristics: Goemans-Williamson's 0.878 Max-Cut guarantee beats low-depth QAOA
-    worst cases (Farhi et al. 2014; Wurtz & Love 2021);
+    worst cases (Farhi et al. 2014; Wurtz & Love 2021), and small graphs are solved exactly by enumeration;
   * an HPC node, not a 16 GiB workstation, doing the statevector simulation;
   * readout error on sampling tasks, and the shots-for-fidelity trade-off: a sampling task with low
     fidelity can still succeed by taking more shots, if the budget allows;
@@ -41,13 +41,15 @@ def classical_option(t: dict, env: dict) -> dict:
     methods = []  # (name, seconds, meets accuracy target)
     if t["family"] == "maxcut":
         methods.append(("heuristic", 1e-4 * t["n_edges"], c["maxcut_heuristic_ratio"] >= t["maxcut_ratio_target"]))
+        methods.append(("exact", 2.0 ** (n - 1) * t["n_edges"] / c["enumeration_rate"], True))
     else:
         if 16 * 2.0**n <= mem:
             methods.append(("statevector", gates * 2.0**n * 32 / (c["memory_bandwidth_gbs"] * 1e9), True))
         chi = 2.0 ** min(int(t["entanglement_bound"]), n // 2)
         if chi <= c["mps_max_bond"] and n * chi**2 * 16 <= mem:
             methods.append(("mps", gates * 8 * chi**3 / c["flops"], True))
-    methods = [(name, s + c["job_overhead_s"], meets) for name, s, meets in methods]
+    variants = t.get("variants", 1)  # Phase 4: a cut circuit's fragment is simulated once per variant
+    methods = [(name, s * variants + c["job_overhead_s"], meets) for name, s, meets in methods]
     ok = [(name, s) for name, s, meets in methods if meets and s <= deadline_s]
     if ok:
         name, s = min(ok, key=lambda m: m[1])

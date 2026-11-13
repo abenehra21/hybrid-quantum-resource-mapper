@@ -8,11 +8,11 @@ entangled circuits, the Goemans-Williamson Max-Cut heuristic, an HPC node's memo
 the shots-for-fidelity trade-off, and random queue waits. **This is a simulation study: the oracle stands in
 for real execution feedback until Phase 5.**
 
-Oracle labels: CLASSICAL 1657 (68%), REDESIGN 509 (21%), HYBRID 266 (11%).
+Oracle labels: CLASSICAL 1770 (73%), REDESIGN 396 (16%), HYBRID 266 (11%).
 
 | family | CLASSICAL | HYBRID | REDESIGN |
 |---|---|---|---|
-| maxcut | 506 | 0 | 262 |
+| maxcut | 619 | 0 | 149 |
 | random | 287 | 266 | 215 |
 | vqe | 864 | 0 | 32 |
 
@@ -21,35 +21,35 @@ a decision that yields no accepted result also pays a 3600 s penalty.
 
 ## Held-out evaluation: random 30% of workloads held out
 
-| Metric | Classical-only | Quantum-only | Rules (exact transpile) | Rules + R3 entanglement check | Rules + Phase 2 predictions | Rules, tuned thresholds | AI: decision tree | AI: gradient boosting | Oracle |
-|---|---|---|---|---|---|---|---|---|---|
-| Decision accuracy (vs oracle) | 0.673 | 0.127 | 0.546 | 0.751 | 0.545 | 0.575 | 0.967 | 0.971 | 1 |
-| Macro-F1 | 0.268 | 0.0752 | 0.5 | 0.633 | 0.497 | 0.509 | 0.934 | 0.937 | 1 |
-| Success rate | 0.673 | 0.264 | 0.56 | 0.751 | 0.559 | 0.585 | 0.967 | 0.971 | 1 |
-| Accuracy (target met when run) | 0.673 | 0.264 | 0.721 | 0.784 | 0.723 | 0.744 | 0.995 | 0.993 | 1 |
-| Mean regret (cost units) | 1.18e+03 | 7.57e+04 | 2.86e+03 | 1.4e+03 | 2.86e+03 | 2.46e+03 | 285 | 420 | 0 |
-| Runtime (s, mean) | 8.37 | 1.28e+04 | 940 | 875 | 937 | 733 | 846 | 976 | 836 |
-| Energy (kJ, mean) | 8.37 | 4.43e+04 | 716 | 214 | 715 | 572 | 594 | 604 | 639 |
-| QPU time (s, mean) | 0 | 1.77e+03 | 28.3 | 8.21 | 28.3 | 22.6 | 23.4 | 23.8 | 25.2 |
-| Number of shots (mean) | 0 | 1.27e+07 | 2.54e+05 | 5.86e+04 | 2.53e+05 | 2.07e+05 | 1.96e+05 | 1.18e+05 | 2.16e+05 |
-| Unnecessary QPU use | 0 | 0.673 | 0.0601 | 0.0464 | 0.0601 | 0.0355 | 0 | 0 | 0 |
-| Communication overhead (QPU jobs per task) | 0 | 1 | 0.165 | 0.152 | 0.163 | 0.117 | 0.105 | 0.109 | 0.127 |
+| Metric | Classical-only | Quantum-only | Rules (exact transpile) | Rules + R3 entanglement check | Rules + Phase 2 predictions | Rules, tuned thresholds | AI: decision tree | AI: gradient boosting | AI + range guard | Oracle |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Decision accuracy (vs oracle) | 0.71 | 0.127 | 0.582 | 0.787 | 0.581 | 0.612 | 0.954 | 0.97 | 0.97 | 1 |
+| Macro-F1 | 0.277 | 0.0752 | 0.521 | 0.661 | 0.517 | 0.53 | 0.914 | 0.93 | 0.93 | 1 |
+| Success rate | 0.71 | 0.264 | 0.596 | 0.787 | 0.594 | 0.622 | 0.954 | 0.97 | 0.97 | 1 |
+| Accuracy (target met when run) | 0.71 | 0.264 | 0.775 | 0.825 | 0.777 | 0.8 | 0.997 | 0.992 | 0.992 | 1 |
+| Mean regret (cost units) | 1.04e+03 | 7.57e+04 | 2.73e+03 | 1.27e+03 | 2.73e+03 | 2.33e+03 | 334 | 428 | 428 | 0 |
+| Runtime (s, mean) | 16.2 | 1.28e+04 | 945 | 880 | 943 | 741 | 843 | 1.02e+03 | 1.02e+03 | 844 |
+| Energy (kJ, mean) | 16.2 | 4.43e+04 | 721 | 219 | 721 | 580 | 591 | 610 | 610 | 646 |
+| QPU time (s, mean) | 0 | 1.77e+03 | 28.3 | 8.21 | 28.3 | 22.6 | 23.4 | 23.9 | 23.9 | 25.2 |
+| Number of shots (mean) | 0 | 1.27e+07 | 2.54e+05 | 5.86e+04 | 2.53e+05 | 2.07e+05 | 1.96e+05 | 1.2e+05 | 1.2e+05 | 2.16e+05 |
+| Unnecessary QPU use | 0 | 0.71 | 0.0615 | 0.0478 | 0.0615 | 0.0355 | 0 | 0 | 0 | 0 |
+| Communication overhead (QPU jobs per task) | 0 | 1 | 0.165 | 0.152 | 0.163 | 0.117 | 0.105 | 0.112 | 0.112 | 0.127 |
 
 ## Held-out evaluation: extrapolation (train n<=40, test n>40)
 
-| Metric | Classical-only | Quantum-only | Rules (exact transpile) | Rules + R3 entanglement check | Rules + Phase 2 predictions | Rules, tuned thresholds | AI: decision tree | AI: gradient boosting | Oracle |
-|---|---|---|---|---|---|---|---|---|---|
-| Decision accuracy (vs oracle) | 0.552 | 0.171 | 0.332 | 0.653 | 0.336 | 0.333 | 0.801 | 0.863 | 1 |
-| Macro-F1 | 0.237 | 0.0974 | 0.36 | 0.626 | 0.364 | 0.354 | 0.769 | 0.827 | 1 |
-| Success rate | 0.552 | 0.186 | 0.347 | 0.653 | 0.351 | 0.348 | 0.801 | 0.863 | 1 |
-| Accuracy (target met when run) | 0.552 | 0.186 | 0.484 | 0.713 | 0.472 | 0.444 | 0.859 | 0.899 | 1 |
-| Mean regret (cost units) | 1.61e+03 | 7.56e+04 | 6.16e+03 | 2.32e+03 | 7.08e+03 | 7.57e+03 | 9.15e+03 | 5.82e+03 | 0 |
-| Runtime (s, mean) | 0.672 | 1.34e+04 | 1.84e+03 | 1.71e+03 | 2.07e+03 | 2.52e+03 | 2.61e+03 | 1.78e+03 | 1.21e+03 |
-| Energy (kJ, mean) | 0.672 | 4.39e+04 | 2.13e+03 | 269 | 2.72e+03 | 3.26e+03 | 5.63e+03 | 3.88e+03 | 617 |
-| QPU time (s, mean) | 0 | 1.75e+03 | 85.3 | 10.8 | 109 | 131 | 225 | 155 | 24.7 |
-| Number of shots (mean) | 0 | 1.32e+07 | 8.09e+05 | 9.18e+04 | 9.09e+05 | 1.18e+06 | 2.38e+06 | 1.81e+06 | 2.04e+05 |
-| Unnecessary QPU use | 0 | 0.552 | 0.0833 | 0.0686 | 0.0964 | 0.134 | 0 | 0 | 0 |
-| Communication overhead (QPU jobs per task) | 0 | 1 | 0.247 | 0.233 | 0.277 | 0.369 | 0.273 | 0.23 | 0.171 |
+| Metric | Classical-only | Quantum-only | Rules (exact transpile) | Rules + R3 entanglement check | Rules + Phase 2 predictions | Rules, tuned thresholds | AI: decision tree | AI: gradient boosting | AI + range guard | Oracle |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Decision accuracy (vs oracle) | 0.552 | 0.171 | 0.332 | 0.653 | 0.336 | 0.333 | 0.723 | 0.781 | 0.653 | 1 |
+| Macro-F1 | 0.237 | 0.0974 | 0.36 | 0.626 | 0.364 | 0.354 | 0.727 | 0.759 | 0.626 | 1 |
+| Success rate | 0.552 | 0.186 | 0.347 | 0.653 | 0.351 | 0.348 | 0.723 | 0.781 | 0.653 | 1 |
+| Accuracy (target met when run) | 0.552 | 0.186 | 0.484 | 0.713 | 0.472 | 0.444 | 0.888 | 0.864 | 0.713 | 1 |
+| Mean regret (cost units) | 1.61e+03 | 7.56e+04 | 6.16e+03 | 2.32e+03 | 7.08e+03 | 7.57e+03 | 5.96e+03 | 5.91e+03 | 2.32e+03 | 0 |
+| Runtime (s, mean) | 0.672 | 1.34e+04 | 1.84e+03 | 1.71e+03 | 2.07e+03 | 2.52e+03 | 1.61e+03 | 1.73e+03 | 1.71e+03 | 1.21e+03 |
+| Energy (kJ, mean) | 0.672 | 4.39e+04 | 2.13e+03 | 269 | 2.72e+03 | 3.26e+03 | 3.73e+03 | 3.75e+03 | 269 | 617 |
+| QPU time (s, mean) | 0 | 1.75e+03 | 85.3 | 10.8 | 109 | 131 | 149 | 150 | 10.8 | 24.7 |
+| Number of shots (mean) | 0 | 1.32e+07 | 8.09e+05 | 9.18e+04 | 9.09e+05 | 1.18e+06 | 1.44e+06 | 1.54e+06 | 9.18e+04 | 2.04e+05 |
+| Unnecessary QPU use | 0 | 0.552 | 0.0833 | 0.0686 | 0.0964 | 0.134 | 0 | 0 | 0.0686 | 0 |
+| Communication overhead (QPU jobs per task) | 0 | 1 | 0.247 | 0.233 | 0.277 | 0.369 | 0.219 | 0.225 | 0.233 | 0.171 |
 
 ## Stability: 5 random workload splits
 
@@ -57,14 +57,15 @@ The table above is one split. Repeating the 70/30 workload split with 5 seeds gi
 
 | Allocator | Decision accuracy | Mean regret |
 |---|---|---|
-| Classical-only | 0.688 ± 0.015 | 1,122 ± 55 |
+| Classical-only | 0.731 ± 0.020 | 968 ± 71 |
 | Quantum-only | 0.110 ± 0.013 | 67,537 ± 10,063 |
-| Rules (exact transpile) | 0.550 ± 0.020 | 4,284 ± 812 |
-| Rules + R3 entanglement check | 0.751 ± 0.019 | 1,523 ± 191 |
-| Rules + Phase 2 predictions | 0.549 ± 0.020 | 4,291 ± 813 |
-| Rules, tuned thresholds | 0.556 ± 0.016 | 4,066 ± 904 |
-| AI: decision tree | 0.972 ± 0.004 | 494 ± 751 |
-| AI: gradient boosting | 0.983 ± 0.007 | 221 ± 154 |
+| Rules (exact transpile) | 0.588 ± 0.028 | 4,147 ± 808 |
+| Rules + R3 entanglement check | 0.789 ± 0.023 | 1,386 ± 212 |
+| Rules + Phase 2 predictions | 0.587 ± 0.028 | 4,154 ± 811 |
+| Rules, tuned thresholds | 0.596 ± 0.020 | 3,921 ± 897 |
+| AI: decision tree | 0.969 ± 0.012 | 411 ± 525 |
+| AI: gradient boosting | 0.981 ± 0.008 | 213 ± 159 |
+| AI + range guard | 0.973 ± 0.015 | 222 ± 162 |
 | Oracle | 1.000 ± 0.000 | 0 ± 0 |
 
 ## Why the rules disagree with the oracle (random split)
@@ -72,14 +73,15 @@ The table above is one split. Repeating the 70/30 workload split with 5 seeds gi
 | allocator says | oracle | why | tasks |
 |---|---|---|---|
 | REDESIGN | CLASSICAL | weakly entangled: exact MPS simulation | 140 |
-| CLASSICAL | REDESIGN | classical fails: heuristic misses accuracy target | 35 |
 | HYBRID | CLASSICAL | classical Max-Cut heuristic is better | 34 |
 | CLASSICAL | REDESIGN | classical fails: too large and too entangled for statevector or MPS | 30 |
 | REDESIGN | CLASSICAL | classical Max-Cut heuristic is better | 27 |
 | REDESIGN | HYBRID | low-F sampling rescued by extra shots | 20 |
-| HYBRID | REDESIGN | noisy QAOA misses ratio target | 19 |
+| HYBRID | REDESIGN | noisy QAOA misses ratio target | 18 |
 | CLASSICAL | HYBRID | classical fails: too large and too entangled for statevector or MPS | 16 |
 | HYBRID | CLASSICAL | weakly entangled: exact MPS simulation | 10 |
+| CLASSICAL | REDESIGN | classical fails: heuristic misses accuracy target | 9 |
+| HYBRID | CLASSICAL | exact | 1 |
 | HYBRID | REDESIGN | queue + QPU time misses deadline | 1 |
 
 ## What the rules still miss with the R3 entanglement check (random split)
@@ -88,37 +90,40 @@ Feeding R3 the circuit's entanglement bound removes the MPS mistakes. What remai
 
 | allocator says | oracle | why | tasks |
 |---|---|---|---|
-| CLASSICAL | REDESIGN | classical fails: heuristic misses accuracy target | 35 |
 | HYBRID | CLASSICAL | classical Max-Cut heuristic is better | 34 |
 | CLASSICAL | REDESIGN | classical fails: too large and too entangled for statevector or MPS | 30 |
 | REDESIGN | CLASSICAL | classical Max-Cut heuristic is better | 27 |
 | REDESIGN | HYBRID | low-F sampling rescued by extra shots | 20 |
-| HYBRID | REDESIGN | noisy QAOA misses ratio target | 19 |
+| HYBRID | REDESIGN | noisy QAOA misses ratio target | 18 |
 | CLASSICAL | HYBRID | classical fails: too large and too entangled for statevector or MPS | 16 |
+| CLASSICAL | REDESIGN | classical fails: heuristic misses accuracy target | 9 |
+| HYBRID | CLASSICAL | exact | 1 |
 | HYBRID | REDESIGN | queue + QPU time misses deadline | 1 |
 
 ## Where the gradient-boosting allocator still errs (random split)
 
 | allocator says | oracle | why | tasks |
 |---|---|---|---|
-| REDESIGN | HYBRID | low-F sampling rescued by extra shots | 17 |
+| REDESIGN | HYBRID | low-F sampling rescued by extra shots | 16 |
 | HYBRID | REDESIGN | queue + QPU time misses deadline | 4 |
+| REDESIGN | CLASSICAL | exact | 1 |
+| HYBRID | REDESIGN | shots exceed budget | 1 |
 
 ### Confusion matrix: Rules (exact transpile)
 
 |  | says CLASSICAL | says HYBRID | says REDESIGN |
 |---|---|---|---|
-| oracle CLASSICAL | 282 | 44 | 167 |
+| oracle CLASSICAL | 308 | 45 | 167 |
 | oracle HYBRID | 16 | 57 | 20 |
-| oracle REDESIGN | 65 | 20 | 61 |
+| oracle REDESIGN | 39 | 19 | 61 |
 
 ### Confusion matrix: AI: gradient boosting
 
 |  | says CLASSICAL | says HYBRID | says REDESIGN |
 |---|---|---|---|
-| oracle CLASSICAL | 493 | 0 | 0 |
-| oracle HYBRID | 0 | 76 | 17 |
-| oracle REDESIGN | 0 | 4 | 142 |
+| oracle CLASSICAL | 519 | 0 | 1 |
+| oracle HYBRID | 0 | 77 | 16 |
+| oracle REDESIGN | 0 | 5 | 114 |
 
 ## Tuned thresholds (augment, random split)
 
@@ -134,41 +139,41 @@ Depth-4 tree, readable as if-then rules:
 
 ```
 |--- sum_abs_coeffs <= 4.500
-|   |--- n_qubits <= 33.000
-|   |   |--- pred_two_qubit_gates <= 1050.916
-|   |   |   |--- class: CLASSICAL
-|   |   |--- pred_two_qubit_gates >  1050.916
-|   |   |   |--- class: CLASSICAL
-|   |--- n_qubits >  33.000
-|   |   |--- pred_log10_good_samples_affordable <= 3.840
-|   |   |   |--- pred_qpu_min_over_deadline <= 0.011
-|   |   |   |   |--- class: REDESIGN
-|   |   |   |--- pred_qpu_min_over_deadline >  0.011
-|   |   |   |   |--- class: REDESIGN
-|   |   |--- pred_log10_good_samples_affordable >  3.840
-|   |   |   |--- pred_qpu_min_over_deadline <= 1.000
+|   |--- pred_log10_good_samples_affordable <= 3.840
+|   |   |--- pred_log10_good_samples_affordable <= 2.988
+|   |   |   |--- class: REDESIGN
+|   |   |--- pred_log10_good_samples_affordable >  2.988
+|   |   |   |--- class: REDESIGN
+|   |--- pred_log10_good_samples_affordable >  3.840
+|   |   |--- pred_qpu_min_over_deadline <= 1.000
+|   |   |   |--- n_qubits <= 33.000
+|   |   |   |   |--- class: CLASSICAL
+|   |   |   |--- n_qubits >  33.000
 |   |   |   |   |--- class: HYBRID
-|   |   |   |--- pred_qpu_min_over_deadline >  1.000
+|   |   |--- pred_qpu_min_over_deadline >  1.000
+|   |   |   |--- n_qubits <= 33.000
+|   |   |   |   |--- class: CLASSICAL
+|   |   |   |--- n_qubits >  33.000
 |   |   |   |   |--- class: REDESIGN
 |--- sum_abs_coeffs >  4.500
-|   |--- maxcut_ratio_target <= 0.875
-|   |   |--- pred_qpu_min_over_deadline <= 10217.156
-|   |   |   |--- entanglement=full <= 0.500
+|   |--- pred_log10_F <= -0.731
+|   |   |--- maxcut_ratio_target <= 0.875
+|   |   |   |--- pred_log10_shots <= 9.834
 |   |   |   |   |--- class: CLASSICAL
-|   |   |   |--- entanglement=full >  0.500
-|   |   |   |   |--- class: CLASSICAL
-|   |   |--- pred_qpu_min_over_deadline >  10217.156
-|   |   |   |--- class: REDESIGN
-|   |--- maxcut_ratio_target >  0.875
-|   |   |--- entanglement=none <= 0.500
-|   |   |   |--- analytic_2q <= 555.000
-|   |   |   |   |--- class: CLASSICAL
-|   |   |   |--- analytic_2q >  555.000
+|   |   |   |--- pred_log10_shots >  9.834
 |   |   |   |   |--- class: REDESIGN
-|   |   |--- entanglement=none >  0.500
-|   |   |   |--- log10_precision_target <= -2.398
+|   |   |--- maxcut_ratio_target >  0.875
+|   |   |   |--- n_qubits <= 33.000
+|   |   |   |   |--- class: CLASSICAL
+|   |   |   |--- n_qubits >  33.000
 |   |   |   |   |--- class: REDESIGN
-|   |   |   |--- log10_precision_target >  -2.398
+|   |--- pred_log10_F >  -0.731
+|   |   |--- n_edges <= 49.500
+|   |   |   |--- class: CLASSICAL
+|   |   |--- n_edges >  49.500
+|   |   |   |--- maxcut_ratio_target <= 0.875
+|   |   |   |   |--- class: CLASSICAL
+|   |   |   |--- maxcut_ratio_target >  0.875
 |   |   |   |   |--- class: REDESIGN
 
 ```
@@ -177,37 +182,37 @@ Depth-4 tree, readable as if-then rules:
 
 | feature | macro-F1 drop when shuffled |
 |---|---|
-| n_qubits | 0.206 |
-| reps | 0.201 |
-| pred_qpu_min_over_deadline | 0.14 |
-| maxcut_ratio_target | 0.132 |
-| n_edges | 0.0619 |
-| pred_log10_good_samples_affordable | 0.0316 |
-| analytic_2q | 0.00824 |
-| pred_depth | 0.00426 |
-| n_pauli_terms | 0.00394 |
-| deadline_min | 0.00165 |
+| n_qubits | 0.264 |
+| reps | 0.243 |
+| pred_qpu_min_over_deadline | 0.151 |
+| maxcut_ratio_target | 0.082 |
+| n_edges | 0.0433 |
+| pred_log10_good_samples_affordable | 0.031 |
+| analytic_2q | 0.00902 |
+| pred_log10_F | 0.00553 |
+| deadline_min | 0.00273 |
+| pred_depth | 0.00188 |
 
 ## Feedback curve: learning from new execution data (Function 6)
 
-Start from the extrapolation split (train on <= 40 qubits). Move a share of the larger workloads into training as execution feedback; score on a fixed 70% of large workloads that are never fed back.
+Start from the extrapolation split (train on <= 40 qubits). Move a share of the larger workloads into training as execution feedback; score on a fixed 70% of large workloads that are never fed back. *AI + range guard* uses gradient boosting only up to the size that at least 5% of its training tasks reach, and the rules with the R3 check beyond it.
 
 Mean regret:
 
-| feedback (share of large workloads) | AI: decision tree | AI: gradient boosting | Classical-only | Rules (exact transpile) | Rules + R3 entanglement check |
-|---|---|---|---|---|---|
-| 0 | 8.97e+03 | 5.75e+03 | 1.61e+03 | 5.34e+03 | 2.29e+03 |
-| 0.05 | 9.14e+03 | 5.97e+03 | 1.61e+03 | 5.34e+03 | 2.29e+03 |
-| 0.1 | 9.03e+03 | 2.27e+03 | 1.61e+03 | 5.34e+03 | 2.29e+03 |
-| 0.2 | 4.63e+03 | 1.67e+03 | 1.61e+03 | 5.34e+03 | 2.29e+03 |
-| 0.3 | 1.23e+03 | 397 | 1.61e+03 | 5.34e+03 | 2.29e+03 |
+| feedback (share of large workloads) | AI + range guard | AI: decision tree | AI: gradient boosting | Classical-only | Rules (exact transpile) | Rules + R3 entanglement check |
+|---|---|---|---|---|---|---|
+| 0 | 2.29e+03 | 6e+03 | 5.94e+03 | 1.61e+03 | 5.34e+03 | 2.29e+03 |
+| 0.05 | 2.29e+03 | 6.03e+03 | 5.99e+03 | 1.61e+03 | 5.34e+03 | 2.29e+03 |
+| 0.1 | 1.19e+03 | 6.04e+03 | 1.97e+03 | 1.61e+03 | 5.34e+03 | 2.29e+03 |
+| 0.2 | 776 | 2.36e+03 | 1.62e+03 | 1.61e+03 | 5.34e+03 | 2.29e+03 |
+| 0.3 | 575 | 1.33e+03 | 465 | 1.61e+03 | 5.34e+03 | 2.29e+03 |
 
 Decision accuracy:
 
-| feedback (share of large workloads) | AI: decision tree | AI: gradient boosting | Classical-only | Rules (exact transpile) | Rules + R3 entanglement check |
-|---|---|---|---|---|---|
-| 0 | 0.813 | 0.866 | 0.552 | 0.333 | 0.666 |
-| 0.05 | 0.798 | 0.866 | 0.552 | 0.333 | 0.666 |
-| 0.1 | 0.827 | 0.903 | 0.552 | 0.333 | 0.666 |
-| 0.2 | 0.955 | 0.969 | 0.552 | 0.333 | 0.666 |
-| 0.3 | 0.978 | 0.97 | 0.552 | 0.333 | 0.666 |
+| feedback (share of large workloads) | AI + range guard | AI: decision tree | AI: gradient boosting | Classical-only | Rules (exact transpile) | Rules + R3 entanglement check |
+|---|---|---|---|---|---|---|
+| 0 | 0.666 | 0.72 | 0.781 | 0.552 | 0.333 | 0.666 |
+| 0.05 | 0.666 | 0.714 | 0.814 | 0.552 | 0.333 | 0.666 |
+| 0.1 | 0.781 | 0.71 | 0.882 | 0.552 | 0.333 | 0.666 |
+| 0.2 | 0.901 | 0.666 | 0.97 | 0.552 | 0.333 | 0.666 |
+| 0.3 | 0.928 | 0.65 | 0.968 | 0.552 | 0.333 | 0.666 |

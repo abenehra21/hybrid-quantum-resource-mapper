@@ -33,12 +33,12 @@ Predicted circuit fields fed into the unchanged Phase 1 rules, compared with dec
 
 | split | model | n_test | decision agreement | fired-rule agreement | median |log10 F error| | predict+decide ms/task | exact transpile ms/task |
 |---|---|---|---|---|---|---|---|
-| interpolation (random 25% of circuits held out) | analytic | 152 | 0.836 | 0.803 | 0.255 | 1.87 | 2.29e+03 |
-| interpolation (random 25% of circuits held out) | power-law | 152 | 1 | 0.993 | 0.04 | 1.96 | 2.29e+03 |
-| interpolation (random 25% of circuits held out) | gbt | 152 | 1 | 0.993 | 0.0453 | 2.01 | 2.29e+03 |
-| extrapolation (train n<=40, test n>40) | analytic | 288 | 0.691 | 0.684 | 0.788 | 1.89 | 2.46e+03 |
-| extrapolation (train n<=40, test n>40) | power-law | 288 | 0.958 | 0.951 | 0.136 | 1.97 | 2.46e+03 |
-| extrapolation (train n<=40, test n>40) | gbt | 288 | 0.899 | 0.885 | 0.272 | 1.95 | 2.46e+03 |
+| interpolation (random 25% of circuits held out) | analytic | 152 | 0.836 | 0.803 | 0.255 | 0.0203 | 2.29e+03 |
+| interpolation (random 25% of circuits held out) | power-law | 152 | 1 | 0.993 | 0.04 | 0.115 | 2.29e+03 |
+| interpolation (random 25% of circuits held out) | gbt | 152 | 1 | 0.993 | 0.0453 | 0.126 | 2.29e+03 |
+| extrapolation (train n<=40, test n>40) | analytic | 288 | 0.691 | 0.684 | 0.788 | 0.0164 | 2.46e+03 |
+| extrapolation (train n<=40, test n>40) | power-law | 288 | 0.958 | 0.951 | 0.136 | 0.128 | 2.46e+03 |
+| extrapolation (train n<=40, test n>40) | gbt | 288 | 0.899 | 0.885 | 0.272 | 0.0876 | 2.46e+03 |
 
 ## Execution-outcome models (runtime, energy, error)
 

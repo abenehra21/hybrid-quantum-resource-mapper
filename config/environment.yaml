@@ -14,6 +14,10 @@ classical:
   flops: 1.0e+13                 # dense tensor-contraction throughput of one GPU-class node
   mps_max_bond: 4096             # largest exact MPS bond dimension allowed (memory ~ n*chi^2*16 B)
   maxcut_heuristic_ratio: 0.878  # Goemans-Williamson approximation guarantee (1995)
+  # Exact Max-Cut by enumerating all 2^(n-1) cuts: cut-edge evaluations per second (assumed, one
+  # vectorised node). 30 nodes take ~25 s, 40 nodes ~9 h, so only small graphs are solved exactly.
+  enumeration_rate: 1.0e+9
+  cpu_nodes: 4                   # Phase 4: classical nodes a task DAG can use in parallel
 
 quantum:
   # Median readout error of the FakeFez calibration snapshot (qiskit-ibm-runtime). Nighthawk has no
@@ -41,3 +45,15 @@ scenarios:
   samples_needed: [1.0e+4, 1.0e+5, 1.0e+6]      # sampling tasks
   failure_penalty_s: 3600        # regret for a decision that yields no accepted result (failed run or wrong decline)
   seed: 11
+
+# Phase 4 partitioning. Splitting a problem graph or cutting a circuit creates subtasks that go back
+# through Phases 2 and 3, plus classical work to put the pieces together again.
+partition:
+  resolutions: [0.3, 1.0]        # Louvain resolutions tried when looking for modules (coarse, natural)
+  maxcut_part_nodes: 20          # larger Max-Cut modules are bisected until they fit (2^19 cuts each)
+  # Cutting one CZ gate (Mitarai & Fujii 2021): the gate becomes 6 local circuits with quasi-probability
+  # weights of total magnitude gamma = 3, so each cut multiplies the shots by gamma^2 = 9.
+  # tests/test_partition.py rebuilds the decomposition and checks both numbers.
+  gate_cut_gamma: 3
+  gate_cut_circuits: 6
+  max_cuts_per_fragment: 2       # rule-based planner: at most 6^2 = 36 circuit variants per fragment

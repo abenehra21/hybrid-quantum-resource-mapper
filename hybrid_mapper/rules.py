@@ -1,6 +1,7 @@
 """F2 + F4: derived quantities and the ordered rule list. First rule that fires decides."""
 import math
 from dataclasses import dataclass, field
+from functools import cache
 from pathlib import Path
 
 import yaml
@@ -21,7 +22,9 @@ class Decision:
     split: dict | None = field(default=None)
 
 
+@cache
 def load_rules(path: Path = CONFIG_DIR / "rules.yaml") -> dict:
+    """Cached per path: treat the result as read-only (build a new dict to try other thresholds)."""
     return yaml.safe_load(Path(path).read_text())
 
 

@@ -1,4 +1,5 @@
-"""python -m hybrid_mapper demo [--phase N]: a guided walkthrough of Phases 1-3 for a live presentation."""
+"""python -m hybrid_mapper demo [--phase N]: a guided walkthrough of Phases 1-4 for a live presentation.
+(`demo --html` refreshes the visual version, docs/demo.html.)"""
 import time
 
 import pandas as pd
@@ -82,7 +83,35 @@ def phase3() -> None:
     print("\n  Full tables, the learned tree, extrapolation and the feedback curve: results/phase3_allocation.md")
 
 
+def phase4() -> None:
+    from hybrid_mapper import partition as pt
+
+    banner("PHASE 4: automatic partitioning. A REDESIGN task is split, and its parts go back through Phases 2+3.")
+    base = {"precision_target": 5e-2, "maxcut_ratio_target": 0.9, "deadline_min": 480, "queue_wait_min": 30,
+            "shot_budget": 1e7, "samples_needed": 1e5}
+    stories = [
+        ("120-node Max-Cut, ratio target 0.9: the heuristic guarantees 0.878 and QAOA is far below. Split the\n"
+         "  graph, solve every part exactly, merge: the result comes with a certified ratio.",
+         ("maxcut", 120, 1, "none", 0, "nighthawk_r2", base), {}),
+        ("Three fully entangled 26-qubit blocks joined by one CZ each (78 qubits): too wide to simulate, too\n"
+         "  noisy to run. Cutting 2 gates leaves three blocks a statevector simulator can do.",
+         ("clustered", 26, 1, "full", 0, "heron_r3", base), {"blocks": 3, "links": 1}),
+        ("Fully entangled 40 qubits: nothing to cut, so it stays REDESIGN. Partitioning is not magic.",
+         ("vqe", 40, 2, "full", 0, "heron_r3", base), {}),
+    ]
+    for i, (story, args, extra) in enumerate(stories, 1):
+        print(f"\n--- Example {i}. {story}\n")
+        print(pt.describe(pt.plan_one(*args, **extra)))
+    print("\n--- A multi-kernel application as one task DAG (config/applications.yaml)\n")
+    print(pt.describe_workflow(pt.plan_workflow("screening_pipeline")))
+    print("\n--- Held-out evaluation (30% of workloads never seen in training)\n")
+    apps, plans = pt.load_apps(), pt.load_plans()
+    r = pt.evaluate_split(*next(iter(pt.splits(apps).values())), plans)
+    print(pd.DataFrame(r["metrics"]).T.to_string(float_format=lambda v: f"{v:,.3g}"))
+    print("\n  Full tables and the two model-free checks: results/phase4_partitioning.md")
+
+
 def run(phase: int | None = None) -> None:
-    for n, fn in ((1, phase1), (2, phase2), (3, phase3)):
+    for n, fn in ((1, phase1), (2, phase2), (3, phase3), (4, phase4)):
         if phase in (None, n):
             fn()

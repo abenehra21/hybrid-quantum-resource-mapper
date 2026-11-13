@@ -150,7 +150,7 @@ details.qa .a p:last-child{margin-bottom:0}
 <div class="shell">
 <nav class="rail" id="rail" aria-label="Contents">
   <p class="brand">Resource Mapper Handbook</p>
-  <p class="brand-sub">AI-driven task analysis for hybrid quantum–classical computing. Phases 1–3, from first principles.</p>
+  <p class="brand-sub">AI-driven task analysis for hybrid quantum–classical computing. Phases 1–4, from first principles.</p>
   <div class="legend">
     <span class="chip c-classical">CLASSICAL</span><span class="chip c-hybrid">HYBRID</span>
     <span class="chip c-redesign">REDESIGN</span><span class="chip c-quantum">QPU</span>
@@ -200,12 +200,21 @@ details.qa .a p:last-child{margin-bottom:0}
     <li><a href="#p3-feedback">Extrapolation and feedback</a></li>
     <li><a href="#p3-demo">Phase 3 demo</a></li>
   </ol>
+  <h4>Phase 4 · Partitioning</h4>
+  <ol>
+    <li><a href="#p4-what">What partitioning means</a></li>
+    <li><a href="#p4-maxcut">Max-Cut: split, solve, merge</a></li>
+    <li><a href="#p4-cut">Gate cutting</a></li>
+    <li><a href="#p4-dag">Task DAG, schedule, planners</a></li>
+    <li><a href="#p4-results">Results</a></li>
+    <li><a href="#p4-demo">Phase 4 demo</a></li>
+  </ol>
   <h4>Defending it</h4>
   <ol>
     <li><a href="#talk">Talk plan</a></li>
     <li><a href="#qa">Professor questions</a></li>
     <li><a href="#limits">Limitations</a></li>
-    <li><a href="#next">Phases 4–6</a></li>
+    <li><a href="#next">Phases 5–6</a></li>
     <li><a href="#glossary">Glossary</a></li>
     <li><a href="#refs">References</a></li>
   </ol>
@@ -216,7 +225,7 @@ details.qa .a p:last-child{margin-bottom:0}
 <header class="hero">
   <p class="eyebrow">Project handbook · repo <span class="cmd">hybrid-quantum-resource-mapper</span></p>
   <h1>Deciding where each piece of a computation should run</h1>
-  <p class="lede">Everything you need to present Phases 1–3 and answer questions on them: the physics and computer science underneath, every formula with a worked example, what the code does line by line, the real results, live calculators, and the questions a professor is likely to ask.</p>
+  <p class="lede">Everything you need to present Phases 1–4 and answer questions on them: the physics and computer science underneath, every formula with a worked example, what the code does line by line, the real results, live calculators, and the questions a professor is likely to ask.</p>
   <div class="routes">
     <span class="chip c-classical">CLASSICAL · run on CPU/GPU</span>
     <span class="chip c-hybrid">HYBRID · QPU + HPC together</span>
@@ -232,7 +241,7 @@ details.qa .a p:last-child{margin-bottom:0}
   <h2>The 90-second pitch</h2>
   <div class="note say"><span class="tag">Say this</span>
     <p>Quantum processors are good at a narrow set of hard sub-problems, but they are small, noisy and slow to access. Classical supercomputers handle everything else. Today, deciding which part of an application goes where is done by hand, by experts. We are building a framework that profiles an incoming task (how many qubits, how many two-qubit gates, how precise the answer must be, how noisy the hardware is, what the deadline is) and routes it: run it classically, run it as a hybrid quantum–classical workflow, or send it back for redesign because it cannot work as posed.</p>
-    <p>Phase 1 is a transparent rule engine: nine ordered checks, every threshold in a config file, every decision explained by the rule that fired. Phase 2 trains models that predict a circuit's cost (gate count, depth, measurement groups) in milliseconds, without building and transpiling it. Phase 3 trains an allocator on execution outcomes. In a simulation study it matches the correct decision on 97% of unseen workloads, against 55% for the fixed rules. When it faces larger problems than it was trained on, its mistakes get expensive, until a small amount of execution feedback fixes them.</p>
+    <p>Phase 1 is a transparent rule engine: nine ordered checks, every threshold in a config file, every decision explained by the rule that fired. Phase 2 trains models that predict a circuit's cost (gate count, depth, measurement groups) in milliseconds, without building and transpiling it. Phase 3 trains an allocator on execution outcomes. In a simulation study it matches the correct decision on 97% of unseen workloads, against 58% for the fixed rules. When it faces larger problems than it was trained on, its mistakes get expensive, until a small amount of execution feedback fixes them. Phase 4 takes the tasks that cannot run as posed and splits them automatically: a graph into smaller graphs, a circuit into fragments. Every part goes back through Phases 2 and 3, and the result is a task graph scheduled on classical nodes and the QPU. Almost half of the stuck tasks get a valid result that way.</p>
   </div>
   <p>Hold one picture in your head: a <strong>hospital triage desk</strong>. Most patients (computations) go to the general ward (classical HPC) because it is cheap, fast and reliable. A few need the specialist (the QPU), but only for one specific procedure, and the specialist has a long waiting list and a shaky hand. Triage decides who goes where, and most of the time it has to say no to the specialist. The proposal says this outright: the goal is "not to use quantum computing for every problem, but to identify when quantum execution is computationally meaningful."</p>
 </section>
@@ -242,7 +251,7 @@ details.qa .a p:last-child{margin-bottom:0}
   <p>Your proposal has 14 sections. This table maps each piece to what exists in the repository, so you can answer "where is that in your code?" without hesitating.</p>
   <div class="tbl"><table>
     <tr><th>Proposal item</th><th>What it asks</th><th>Where it lives</th></tr>
-    <tr><td>Central question</td><td>Can AI analyse a problem, partition it, and pick an efficient strategy under hardware, performance, energy and accuracy constraints?</td><td>Phases 1–3 answer the analyse-and-pick half; partitioning is Phase 4</td></tr>
+    <tr><td>Central question</td><td>Can AI analyse a problem, partition it, and pick an efficient strategy under hardware, performance, energy and accuracy constraints?</td><td>Phases 1–3 answer the analyse-and-pick half; Phase 4 does the partitioning</td></tr>
     <tr><td>RQ1 · hardware-independent characterisation</td><td>Describe a task without fixing the machine</td><td><code>profile.py</code>: problem-level fields; <code>dataset.problem_features</code></td></tr>
     <tr><td>RQ2 · suitability</td><td>Classical, quantum or hybrid?</td><td><code>rules.py</code> (Phase 1), <code>allocate.py</code> (Phase 3)</td></tr>
     <tr><td>RQ4 · estimate resources before execution</td><td>Qubits, depth, gates, measurement cost</td><td><code>predict.py</code> (Phase 2)</td></tr>
@@ -250,7 +259,7 @@ details.qa .a p:last-child{margin-bottom:0}
     <tr><td>RQ7 · reduce time, energy, QPU use</td><td>Without losing accuracy</td><td>Metric tables in <code>results/phase1_baselines.md</code> and <code>phase3_allocation.md</code></td></tr>
     <tr><td>F1 · characterisation</td><td>Task Profile</td><td><code>profiler.py</code></td></tr>
     <tr><td>F2 · suitability analysis</td><td>Decide the route</td><td>Rules R1–R4, R8; learned allocators</td></tr>
-    <tr><td>F3 · partitioning</td><td>Split into subtasks</td><td><code>templates.py</code> (fixed split per algorithm, Phase 1)</td></tr>
+    <tr><td>F3 · partitioning</td><td>Split into subtasks</td><td><code>partition.py</code> (Phase 4: graph splitting, gate cutting, task DAG); <code>templates.py</code> for the work split inside one hybrid task</td></tr>
     <tr><td>F4 · resource estimation and feasibility</td><td>Fits the QPU? If not, redesign</td><td>Rules R5–R7; Phase 2 predictors</td></tr>
     <tr><td>F5 · hybrid execution</td><td>QPU ⇄ CPU loop</td><td><code>baselines.py</code>: SPSA-optimised VQE/QAOA on a noisy simulator</td></tr>
     <tr><td>F6 · feedback and federated learning</td><td>Learn from outcomes, share models not data</td><td>Feedback: Phase 3. Federation: Phase 6 (not built)</td></tr>
@@ -271,13 +280,14 @@ flowchart LR
   F5 --> F6[F6 Feedback<br/>time · energy · error]
   F6 -. retrain .-> F2
   </pre>
-  <p>The development plan has six phases. This handbook covers the first three, which are built and tested:</p>
+  <p>The development plan has six phases. This handbook covers the first four, which are built and tested:</p>
   <div class="tbl"><table>
     <tr><th>Phase</th><th>Proposal wording</th><th>Status</th></tr>
     <tr><td>1 · Rule-based prototype</td><td>Implement the decision rules and establish a baseline for HPC, QPU and hybrid selection</td><td>Built: 9 rules, profiler, baselines, CSV dataset</td></tr>
     <tr><td>2 · Resource prediction</td><td>ML models to predict qubit count, depth, gate count, shots, runtime, energy and error</td><td>Built: 608-row transpiler dataset, three model families, extrapolation tests</td></tr>
-    <tr><td>3 · AI task allocation</td><td>Use ML predictions to replace or augment fixed resource-mapping decisions</td><td>Built as a simulation study: 2,432 labelled tasks, 7 allocators, feedback curve</td></tr>
-    <tr><td>4–6</td><td>Partitioning, QPU integration, federated learning</td><td>Planned; see <a href="#next">Phases 4–6</a></td></tr>
+    <tr><td>3 · AI task allocation</td><td>Use ML predictions to replace or augment fixed resource-mapping decisions</td><td>Built as a simulation study: 2,432 labelled tasks, 8 allocators, feedback curve</td></tr>
+    <tr><td>4 · Automatic partitioning</td><td>Split applications into classical and quantum subtasks (task DAG)</td><td>Built: 3,288 candidate plans executed, 4 planners, Max-Cut plans really solved, gate cutting checked exactly</td></tr>
+    <tr><td>5–6</td><td>QPU integration, federated learning</td><td>Planned; see <a href="#next">Phases 5–6</a></td></tr>
   </table></div>
 </section>
 
@@ -286,15 +296,18 @@ flowchart LR
   <p>Everything runs on a laptop with no IBM account. Fake backends carry real device layouts and calibration data, and qiskit-aer simulates noise.</p>
 <pre><span class="dim"># one-time setup (Python 3.11+)</span>
 python3 -m venv .venv &amp;&amp; .venv/bin/pip install -e ".[test]"
-.venv/bin/pytest                                   <span class="dim"># 34 tests, ~11 s</span>
+.venv/bin/pytest                                   <span class="dim"># 53 tests, ~40 s</span>
 
-<span class="k">python -m hybrid_mapper demo</span>                       <span class="dim"># guided tour of all three phases, ~20 s</span>
+<span class="k">python -m hybrid_mapper demo</span>                       <span class="dim"># guided tour of all four phases, ~30 s</span>
 python -m hybrid_mapper demo --phase 3             <span class="dim"># one phase only</span>
 
 python -m hybrid_mapper decide --preset fes_sqd    <span class="dim"># Phase 1: full rule trace</span>
 python -m hybrid_mapper predict --workload maxcut --size 80 --reps 2 --backend heron_r3 --compare   <span class="dim"># Phase 2</span>
 python -m hybrid_mapper allocate --workload vqe --size 100 --reps 2 --compare                       <span class="dim"># Phase 3</span>
-python -m hybrid_mapper report                     <span class="dim"># regenerate results/*.md, ~1 min</span></pre>
+python -m hybrid_mapper partition --workload maxcut --size 120 --target-ratio 0.9                   <span class="dim"># Phase 4</span>
+python -m hybrid_mapper workflow --name screening_pipeline                                          <span class="dim"># Phase 4, several kernels</span>
+python -m hybrid_mapper report                     <span class="dim"># regenerate results/*.md, ~2 min</span></pre>
+  <p>The visual version of the demo is <a href="demo.html"><code>docs/demo.html</code></a>: seven applications stepped through all four phases, with the partition, the task DAG and the schedule drawn. It opens in any browser and works offline, which makes it the safest thing to show live.</p>
   <div class="note win"><span class="tag">Presenting tip</span><p>Run <code>demo</code> once before the meeting so the Python imports are warm. If something breaks live, <code>results/</code> holds every table already generated, and every number in this handbook comes from those files.</p></div>
 </section>
 
@@ -472,7 +485,7 @@ flowchart LR
     <li><strong>Held-out data.</strong> Score only on data the model never trained on, or you measure memorisation.</li>
     <li><strong>Group splits.</strong> In Phase 3 the same circuit appears under four operating conditions. Splitting by row would put a circuit's twin in both train and test (leakage). We split by workload with <code>GroupShuffleSplit</code>.</li>
     <li><strong>Extrapolation split.</strong> Train on ≤ 40 qubits, test on 50–120. This is the question that matters: will the model work on problems bigger than anything it has seen?</li>
-    <li><strong>Class imbalance.</strong> 68% of Phase 3 tasks are CLASSICAL. We use balanced class weights and report macro-F1.</li>
+    <li><strong>Class imbalance.</strong> 73% of Phase 3 tasks are CLASSICAL. We use balanced class weights and report macro-F1.</li>
     <li><strong>Cost-sensitive learning.</strong> Not all mistakes cost the same: sending a doomed job to the QPU wastes far more than wrongly choosing classical. Elkan (2001) shows that weighting training examples by misclassification cost is the principled fix. The gradient-boosting allocator does this.</li>
     <li><strong>Permutation importance.</strong> Shuffle one feature and see how much the score drops (Breiman, 2001). It tells you what the model actually relies on.</li>
   </ul>
@@ -491,7 +504,7 @@ flowchart LR
     <tr><td>QPU-time prediction (Xing et al., 2025)</td><td>LightGBM predicts IBM QPU processing time from 166,143 real jobs</td><td>Close to our Phase 2 runtime model; we also predict circuit resources and make the routing decision</td></tr>
     <tr><td>QCSC reference architecture (IBM, 2026)</td><td>Layers and tiers for integrating QPUs into HPC</td><td>Leaves decomposition to the application layer, which is our layer</td></tr>
     <tr><td>SQD on Heron + Fugaku (2025)</td><td>Hybrid chemistry at 77 qubits</td><td>A hand-designed split; we automate the choice of split</td></tr>
-    <tr><td>Circuit cutting (Peng et al., 2020; CutQC, 2021)</td><td>Split a large circuit into smaller ones, recombined classically</td><td>A tool Phase 4 could use when R5 says "too many qubits"</td></tr>
+    <tr><td>Circuit cutting (Peng et al., 2020; CutQC, 2021)</td><td>Split a large circuit into smaller ones, recombined classically</td><td>Phase 4 uses the gate-cutting form (Mitarai &amp; Fujii, 2021) on circuits that fall into modules</td></tr>
   </table></div>
 </section>
 
@@ -645,7 +658,7 @@ flowchart LR
   <p class="part-label">Phase 2 · Resource prediction</p>
   <h2>Why predict when you can transpile?</h2>
   <ul>
-    <li><strong>Speed.</strong> Transpiling takes a median 0.7 s per task in our sweep, and up to 30 s. Phase 4 will score many candidate partitions per application; that needs estimates in milliseconds.</li>
+    <li><strong>Speed.</strong> Transpiling takes a median 0.7 s per task in our sweep, and up to 30 s. Phase 4 scores every part of every candidate partition this way; that needs estimates in milliseconds.</li>
     <li><strong>Before the circuit exists.</strong> Predicting from problem-level fields (graph size, ansatz layers, Hamiltonian terms) lets the framework reject hopeless options without building them.</li>
     <li><strong>Some numbers cannot be computed at all.</strong> Runtime, energy and achieved error must be learned from execution logs.</li>
   </ul>
@@ -678,7 +691,7 @@ flowchart LR
     <tr><th>Predicted fields fed to the Phase 1 rules (extrapolation)</th><th class="num">analytic</th><th class="num">power-law</th><th class="num">gbt</th></tr>
     <tr><td>Same decision as with exact transpiled fields</td><td class="num">69%</td><td class="num best">95.8%</td><td class="num">90%</td></tr>
     <tr><td>Median error in log₁₀ F</td><td class="num">0.79</td><td class="num best">0.14</td><td class="num">0.27</td></tr>
-    <tr><td>Time per task</td><td class="num" colspan="3">≈ 2 ms predicted vs ≈ 1.5–2.5 s exact transpile</td></tr>
+    <tr><td>Time per task</td><td class="num" colspan="3">≈ 0.1 ms predicted (in a batch) vs ≈ 1.5–2.5 s exact transpile</td></tr>
   </table></div>
   <ul>
     <li><strong>The power-law beats the analytic baseline on every target.</strong> It learns the SWAP overhead that 2·p·|E| misses.</li>
@@ -725,6 +738,7 @@ flowchart LR
     <tr><th>Effect</th><th>The rules assume</th><th>The ground truth knows</th><th>Source</th></tr>
     <tr><td>Tensor networks</td><td>&gt; 30 qubits cannot be simulated</td><td>Exact MPS when χ = 2^ebits ≤ 4,096 and memory fits</td><td>Vidal 2003</td></tr>
     <tr><td>Classical heuristics</td><td><code>classical_meets_target</code> is a hand-set flag</td><td>Max-Cut heuristic achieves 0.878; QAOA worst case 0.692 / 0.756 / 0.792 for p = 1/2/3, and noise pulls it toward 0.5</td><td>Goemans–Williamson 1995; Farhi 2014; Wurtz &amp; Love 2021</td></tr>
+    <tr><td>Exact Max-Cut</td><td>Not considered</td><td>A small graph is solved exactly by enumerating its 2^(n−1) cuts: 30 nodes take about 25 s, 40 nodes about 9 h</td><td>Assumption (10⁹ cut-edge checks per second), in config</td></tr>
     <tr><td>Classical hardware</td><td>16 GiB workstation</td><td>512 GiB node: statevector up to 35 qubits; bandwidth-bound time</td><td>Assumption, in config</td></tr>
     <tr><td>Readout error</td><td>Ignored</td><td>F × (1 − 0.0076)ⁿ on sampling tasks; expectation values assume readout mitigation</td><td>FakeFez median; van den Berg 2022</td></tr>
     <tr><td>Shots-for-fidelity</td><td>Hard F_min cut-off</td><td>A sampling task needs about 1,000 error-free samples: shots = max(N, 1000/F), allowed if within budget and deadline</td><td>Assumption, in config</td></tr>
@@ -738,12 +752,12 @@ flowchart LR
   <p>Each of the 608 transpiled workloads is paired with 4 sampled operating conditions: precision target, Max-Cut ratio target, deadline, nominal queue, shot budget and samples needed. That gives 2,432 tasks, so the same circuit appears under easy and hard conditions.</p>
   <div class="tbl"><table>
     <tr><th>Family</th><th class="num">CLASSICAL</th><th class="num">HYBRID</th><th class="num">REDESIGN</th></tr>
-    <tr><td>Max-Cut</td><td class="num">506</td><td class="num">0</td><td class="num">262</td></tr>
+    <tr><td>Max-Cut</td><td class="num">619</td><td class="num">0</td><td class="num">149</td></tr>
     <tr><td>Random circuits</td><td class="num">287</td><td class="num">266</td><td class="num">215</td></tr>
     <tr><td>VQE</td><td class="num">864</td><td class="num">0</td><td class="num">32</td></tr>
-    <tr><td><strong>All</strong></td><td class="num">1,657 (68%)</td><td class="num">266 (11%)</td><td class="num">509 (21%)</td></tr>
+    <tr><td><strong>All</strong></td><td class="num">1,770 (73%)</td><td class="num">266 (11%)</td><td class="num">396 (16%)</td></tr>
   </table></div>
-  <p>Read this table as a finding. Under worst-case guarantees, Max-Cut never needs the QPU: either the classical heuristic meets the target, or neither side can guarantee a 0.9 ratio. Every HYBRID label comes from deep random-circuit sampling, the one family where classical simulation genuinely runs out of road. That matches the intuition behind random-circuit sampling experiments.</p>
+  <p>Read this table as a finding. Under worst-case guarantees, Max-Cut never needs the QPU: the classical heuristic meets the target, or the graph is small enough to solve exactly, or (a large graph with a 0.9 target) nothing works as one task. Those 149 stuck tasks are exactly what Phase 4 rescues. Every HYBRID label comes from deep random-circuit sampling, the one family where classical simulation genuinely runs out of road. That matches the intuition behind random-circuit sampling experiments.</p>
 </section>
 
 <section class="part" id="p3-explorer">
@@ -801,21 +815,21 @@ flowchart LR
   <div class="chart" id="ch_alloc" role="img" aria-label="Decision accuracy and regret by allocator"></div>
   <div class="tbl"><table>
     <tr><th>Allocator</th><th class="num">Accuracy</th><th class="num">Macro-F1</th><th class="num">Success</th><th class="num">Mean regret</th><th class="num">QPU s / task</th><th class="num">Unneeded QPU</th></tr>
-    <tr><td>Classical-only</td><td class="num">67.3%</td><td class="num">0.27</td><td class="num">67.3%</td><td class="num">1,176</td><td class="num">0</td><td class="num">0%</td></tr>
-    <tr><td>Quantum-only</td><td class="num">12.7%</td><td class="num">0.08</td><td class="num">26.4%</td><td class="num">75,746</td><td class="num">1,772</td><td class="num">67%</td></tr>
-    <tr><td>Rules (exact transpile)</td><td class="num">54.6%</td><td class="num">0.50</td><td class="num">56.0%</td><td class="num">2,855</td><td class="num">28.3</td><td class="num">6.0%</td></tr>
-    <tr><td>Rules + R3 entanglement check</td><td class="num">75.1%</td><td class="num">0.63</td><td class="num">75.1%</td><td class="num">1,397</td><td class="num">8.2</td><td class="num">4.6%</td></tr>
-    <tr><td>Rules + Phase 2 predictions</td><td class="num">54.5%</td><td class="num">0.50</td><td class="num">55.9%</td><td class="num">2,860</td><td class="num">28.3</td><td class="num">6.0%</td></tr>
-    <tr><td>Rules, tuned thresholds</td><td class="num">57.5%</td><td class="num">0.51</td><td class="num">58.5%</td><td class="num">2,460</td><td class="num">22.6</td><td class="num">3.6%</td></tr>
-    <tr><td>AI: decision tree</td><td class="num">96.7%</td><td class="num">0.93</td><td class="num">96.7%</td><td class="num best">285</td><td class="num">23.4</td><td class="num">0%</td></tr>
-    <tr><td>AI: gradient boosting</td><td class="num best">97.1%</td><td class="num best">0.94</td><td class="num best">97.1%</td><td class="num">420</td><td class="num">23.8</td><td class="num">0%</td></tr>
+    <tr><td>Classical-only</td><td class="num">71.0%</td><td class="num">0.28</td><td class="num">71.0%</td><td class="num">1,043</td><td class="num">0</td><td class="num">0%</td></tr>
+    <tr><td>Quantum-only</td><td class="num">12.7%</td><td class="num">0.08</td><td class="num">26.4%</td><td class="num">75,746</td><td class="num">1,772</td><td class="num">71%</td></tr>
+    <tr><td>Rules (exact transpile)</td><td class="num">58.2%</td><td class="num">0.52</td><td class="num">59.6%</td><td class="num">2,727</td><td class="num">28.3</td><td class="num">6.2%</td></tr>
+    <tr><td>Rules + R3 entanglement check</td><td class="num">78.7%</td><td class="num">0.66</td><td class="num">78.7%</td><td class="num">1,269</td><td class="num">8.2</td><td class="num">4.8%</td></tr>
+    <tr><td>Rules + Phase 2 predictions</td><td class="num">58.1%</td><td class="num">0.52</td><td class="num">59.4%</td><td class="num">2,732</td><td class="num">28.3</td><td class="num">6.2%</td></tr>
+    <tr><td>Rules, tuned thresholds</td><td class="num">61.2%</td><td class="num">0.53</td><td class="num">62.2%</td><td class="num">2,328</td><td class="num">22.6</td><td class="num">3.6%</td></tr>
+    <tr><td>AI: decision tree</td><td class="num">95.4%</td><td class="num">0.91</td><td class="num">95.4%</td><td class="num best">334</td><td class="num">23.4</td><td class="num">0%</td></tr>
+    <tr><td>AI: gradient boosting</td><td class="num best">97.0%</td><td class="num best">0.93</td><td class="num best">97.0%</td><td class="num">428</td><td class="num">23.9</td><td class="num">0%</td></tr>
     <tr><td>Oracle</td><td class="num">100%</td><td class="num">1</td><td class="num">100%</td><td class="num">0</td><td class="num">25.2</td><td class="num">0%</td></tr>
   </table></div>
   <h3>What to take from it</h3>
   <ul>
-    <li><strong>Replace beats augment.</strong> Predicted fields leave the rules unchanged (54.5%) and tuning the thresholds adds 3 points. No threshold can express "weakly entangled circuits are classically easy".</li>
-    <li><strong>The fair comparison still favours the AI.</strong> Give the rules the one feature they lack (R3 fed the entanglement bound) and they reach 75% with half the regret, but they stay far behind 97%. What remains are interactions no single threshold expresses: the Max-Cut heuristic against the ratio target, and low-F sampling rescued by extra shots.</li>
-    <li><strong>It is not one lucky split.</strong> Over 5 random workload splits, gradient boosting averages 98.3% ± 0.7% accuracy and regret 221 ± 154. The tree is as accurate (97.2% ± 0.4%) but its regret swings (494 ± 751), because a few expensive mistakes dominate the mean.</li>
+    <li><strong>Replace beats augment.</strong> Predicted fields leave the rules unchanged (58.1%) and tuning the thresholds adds 3 points. No threshold can express "weakly entangled circuits are classically easy".</li>
+    <li><strong>The fair comparison still favours the AI.</strong> Give the rules the one feature they lack (R3 fed the entanglement bound) and they reach 79% with half the regret, but they stay far behind 97%. What remains are interactions no single threshold expresses: the Max-Cut heuristic against the ratio target, and low-F sampling rescued by extra shots.</li>
+    <li><strong>It is not one lucky split.</strong> Over 5 random workload splits, gradient boosting averages 98.1% ± 0.8% accuracy and regret 213 ± 159. The tree is nearly as accurate (96.9% ± 1.2%) but its regret swings (411 ± 525), because a few expensive mistakes dominate the mean.</li>
     <li><strong>Classical-only is a strong baseline.</strong> Its regret is lower than the rules', because classical failures are cheap and quantum failures are not. That matches the proposal's instinct that classical should be the default.</li>
     <li><strong>The AI never chose the QPU when classical would do</strong> (0% unnecessary QPU use) and used less QPU time than the oracle needed on average.</li>
   </ul>
@@ -823,39 +837,40 @@ flowchart LR
   <div class="tbl"><table>
     <tr><th>Rules say</th><th>Truth</th><th>Why</th><th class="num">Tasks</th></tr>
     <tr><td>REDESIGN</td><td>CLASSICAL</td><td>Weakly entangled: exact MPS simulation</td><td class="num">140</td></tr>
-    <tr><td>CLASSICAL</td><td>REDESIGN</td><td>Classical heuristic misses a 0.9 ratio target</td><td class="num">35</td></tr>
     <tr><td>HYBRID</td><td>CLASSICAL</td><td>Classical Max-Cut heuristic is better than noisy QAOA</td><td class="num">34</td></tr>
     <tr><td>CLASSICAL</td><td>REDESIGN</td><td>Classical route too large and too entangled (R8 fallback fails)</td><td class="num">30</td></tr>
     <tr><td>REDESIGN</td><td>CLASSICAL</td><td>Classical Max-Cut heuristic is better</td><td class="num">27</td></tr>
     <tr><td>REDESIGN</td><td>HYBRID</td><td>Low-F sampling rescued by extra shots</td><td class="num">20</td></tr>
-    <tr><td>HYBRID</td><td>REDESIGN</td><td>Noisy QAOA misses the ratio target</td><td class="num">19</td></tr>
+    <tr><td>HYBRID</td><td>REDESIGN</td><td>Noisy QAOA misses the ratio target</td><td class="num">18</td></tr>
+    <tr><td>CLASSICAL</td><td>HYBRID</td><td>Classical route too large and too entangled; the QPU would have worked</td><td class="num">16</td></tr>
+    <tr><td>HYBRID</td><td>CLASSICAL</td><td>Weakly entangled: exact MPS simulation</td><td class="num">10</td></tr>
+    <tr><td>CLASSICAL</td><td>REDESIGN</td><td>Classical heuristic misses a 0.9 ratio target</td><td class="num">9</td></tr>
   </table></div>
-  <p>The gradient-boosting allocator's remaining 21 mistakes on this split: 17 low-F sampling tasks it wrongly declined (a boundary it learns imperfectly) and 4 hybrid runs that miss the deadline because the realised queue exceeded the nominal one, which it cannot see.</p>
+  <p>That is 304 of the rules' 306 mistakes on this split. The gradient-boosting allocator's 22 mistakes: 16 low-F sampling tasks it wrongly declined (a boundary it learns imperfectly), 4 hybrid runs that miss the deadline because the realised queue exceeded the nominal one, which it cannot see, 1 run over the shot budget, and 1 small Max-Cut it declined.</p>
   <h3>The learned tree, readable</h3>
 <pre>|--- sum_abs_coeffs &lt;= 4.5                     <span class="dim"># i.e. a random circuit (no Hamiltonian)</span>
-|   |--- n_qubits &lt;= 33                       <span class="dim">#   small enough for statevector</span>
-|   |   |--- class: <span class="cl">CLASSICAL</span>
-|   |--- n_qubits &gt;  33
-|   |   |--- good_samples_affordable &lt;= 3.84   <span class="dim">#   budget buys &lt; ~7,000 clean samples</span>
-|   |   |   |--- class: <span class="bad">REDESIGN</span>
-|   |   |--- good_samples_affordable &gt;  3.84
-|   |   |   |--- qpu_min_over_deadline &lt;= 1.0  <span class="dim">#   fits the deadline</span>
-|   |   |   |   |--- class: <span class="ok">HYBRID</span>
-|   |   |   |--- else: class: <span class="bad">REDESIGN</span>
+|   |--- good_samples_affordable &lt;= 3.84       <span class="dim">#   budget buys &lt; ~7,000 clean samples</span>
+|   |   |--- class: <span class="bad">REDESIGN</span>
+|   |--- good_samples_affordable &gt;  3.84
+|   |   |--- n_qubits &lt;= 33                   <span class="dim">#   small enough for statevector</span>
+|   |   |   |--- class: <span class="cl">CLASSICAL</span>
+|   |   |--- n_qubits &gt;  33
+|   |   |   |--- qpu_min_over_deadline &lt;= 1.0: <span class="ok">HYBRID</span>, else <span class="bad">REDESIGN</span>
 |--- sum_abs_coeffs &gt;  4.5                     <span class="dim"># VQE or Max-Cut</span>
 |   |--- maxcut_ratio_target &lt;= 0.875          <span class="dim">#   GW's 0.878 can meet it</span>
 |   |   |--- (almost always) class: <span class="cl">CLASSICAL</span>
 |   |--- maxcut_ratio_target &gt;  0.875
-|   |   |--- entanglement=none (Max-Cut): <span class="bad">REDESIGN</span>; small VQE: <span class="cl">CLASSICAL</span></pre>
-  <p>(Condensed from <code>results/phase3_allocation.md</code>; comments added.) Two things worth pointing out. The tree rediscovered the 33–35-qubit statevector line and the 0.878 Goemans–Williamson threshold from data alone. And it uses <code>sum_abs_coeffs ≤ 4.5</code> as a proxy for "is a random circuit", which is correct here but is the kind of shortcut a model takes. A professor may ask exactly this: a learned model finds proxies, so you check them.</p>
+|   |   |--- small (n_qubits &lt;= 33, or at most 49 edges): <span class="cl">CLASSICAL</span>   <span class="dim"># solved exactly</span>
+|   |   |--- larger: <span class="bad">REDESIGN</span></pre>
+  <p>(Condensed from <code>results/phase3_allocation.md</code>; comments added.) Three things worth pointing out. The tree rediscovered the 33–35-qubit statevector line and the 0.878 Goemans–Williamson threshold from data alone. It also found that a 0.9 target is only met on small graphs, where enumeration works. And it uses <code>sum_abs_coeffs ≤ 4.5</code> as a proxy for "is a random circuit", which is correct here but is the kind of shortcut a model takes. A professor may ask exactly this: a learned model finds proxies, so you check them.</p>
   <h3>What the boosting model relies on (permutation importance)</h3>
   <div class="tbl"><table>
     <tr><th>Feature</th><th class="num">Macro-F1 drop when shuffled</th></tr>
-    <tr><td>n_qubits</td><td class="num">0.21</td></tr>
-    <tr><td>reps</td><td class="num">0.20</td></tr>
-    <tr><td>(queue + predicted QPU time) / deadline</td><td class="num">0.14</td></tr>
-    <tr><td>Max-Cut ratio target</td><td class="num">0.13</td></tr>
-    <tr><td>n_edges</td><td class="num">0.06</td></tr>
+    <tr><td>n_qubits</td><td class="num">0.26</td></tr>
+    <tr><td>reps</td><td class="num">0.24</td></tr>
+    <tr><td>(queue + predicted QPU time) / deadline</td><td class="num">0.15</td></tr>
+    <tr><td>Max-Cut ratio target</td><td class="num">0.08</td></tr>
+    <tr><td>n_edges</td><td class="num">0.04</td></tr>
     <tr><td>log₁₀(budget × predicted F)</td><td class="num">0.03</td></tr>
   </table></div>
   <p>reps matters because it sets the entanglement bound of the VQE ansatz (χ ≤ 2^reps for linear), which is what decides MPS simulability.</p>
@@ -869,14 +884,18 @@ flowchart LR
     <tr><td>Classical-only</td><td class="num">55.2%</td><td class="num best">1,613</td></tr>
     <tr><td>Rules (exact transpile)</td><td class="num">33.2%</td><td class="num">6,158</td></tr>
     <tr><td>Rules, tuned thresholds</td><td class="num">33.3%</td><td class="num">7,574</td></tr>
-    <tr><td>AI: decision tree</td><td class="num">80.1%</td><td class="num">9,149</td></tr>
-    <tr><td>AI: gradient boosting</td><td class="num best">86.3%</td><td class="num">5,816</td></tr>
+    <tr><td>Rules + R3 entanglement check</td><td class="num">65.3%</td><td class="num">2,324</td></tr>
+    <tr><td>AI: decision tree</td><td class="num">72.3%</td><td class="num">5,956</td></tr>
+    <tr><td>AI: gradient boosting</td><td class="num best">78.1%</td><td class="num">5,907</td></tr>
+    <tr><td>AI + range guard</td><td class="num">65.3%</td><td class="num">2,324</td></tr>
   </table></div>
-  <p>The AI is still far more often right, but its mistakes are expensive: large sampling jobs sent to the QPU whose shot needs exceed the budget. The cause is distribution shift. Below 40 qubits, random circuits up to 35 qubits are all simulated classically, so the boundary between HYBRID and REDESIGN is learned from only the 36- and 40-qubit examples. Thresholds tuned on small tasks generalise even worse.</p>
+  <p>The AI is still the one most often right, but its mistakes are expensive: 73 large sampling jobs sent to the QPU whose shot needs exceed the budget. The cause is distribution shift. Below 40 qubits, random circuits up to 35 qubits are all simulated classically, so the boundary between HYBRID and REDESIGN is learned from only the 36- and 40-qubit examples. A second example: every small Max-Cut with a 0.9 target is solved exactly, so the model learns "CLASSICAL" and carries it to 100-node graphs, where enumeration is hopeless (27 mistakes). Thresholds tuned on small tasks generalise even worse.</p>
+  <h3>The range guard</h3>
+  <p>Choosing the action with the lowest expected regret, instead of the most likely one, barely helps (5,781): the model is confidently wrong, so its probabilities carry no warning. What does help is not asking it. A learned policy is trusted only up to the size that at least 5% of its training tasks reach (<code>trusted_qubits</code>); beyond that the rules with the R3 check decide. Out of range the guarded allocator is exactly the rules (2,324 instead of 5,907). Inside the training range it is the learned model, at a small cost when a random split leaves the largest size thin (5-split accuracy 97.3% against 98.1%). As feedback for larger tasks arrives, the trusted range widens by itself.</p>
   <h3>The feedback curve (Function 6 in miniature)</h3>
   <p>Start from the extrapolation split. Move a share of the large workloads into training as "execution feedback", and score on a fixed 70% of large workloads that are never fed back.</p>
   <div class="chart" id="ch_fb" role="img" aria-label="Mean regret against share of large workloads fed back"></div>
-  <div class="note win"><span class="tag">The result to lead with</span><p>Feeding back 10% of the large workloads cuts gradient-boosting regret from 5,753 to 2,268. At 30% it reaches 397, below classical-only (1,613), the rules with the entanglement check (2,290) and the static rules (5,340), none of which can learn. That is the proposal's research hypothesis, that adaptive allocation beats static rules by learning from observed behaviour, demonstrated in simulation.</p></div>
+  <div class="note win"><span class="tag">The result to lead with</span><p>Feeding back 10% of the large workloads cuts gradient-boosting regret from 5,942 to 1,970. At 30% it reaches 465, below classical-only (1,613), the rules with the entanglement check (2,289) and the static rules (5,340), none of which can learn. With the range guard the curve never rises above the rules on the way: 2,289, then 1,185 at 10% and 575 at 30%. That is the proposal's research hypothesis, that adaptive allocation beats static rules by learning from observed behaviour, demonstrated in simulation.</p></div>
 </section>
 
 <section class="part" id="p3-demo">
@@ -915,10 +934,168 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
   <p>On the boundary the budget buys about 2,800 clean samples against 1,000 needed. The AI does not know about readout error and is slightly off on F, so it declines. Showing a failure you understand is more convincing than a perfect demo.</p>
 </section>
 
+<!-- ================================================================ PHASE 4 -->
+<section class="part" id="p4-what">
+  <p class="part-label">Phase 4 · Automatic partitioning</p>
+  <h2>What partitioning means here</h2>
+  <p>Phases 1–3 end with one of three words. REDESIGN means "this cannot run as posed", and until now a person had to act on it. Phase 4 acts on it automatically: it splits the task into parts, checks that each part can run, and puts the answers back together.</p>
+  <p>The design choice that keeps Phase 4 small is that <strong>a part is just another task</strong>. Each part is written as a Phase 3 task row with changed conditions, so the Phase 2 predictor, the Phase 1 rules and the Phase 3 allocator apply to it unchanged:</p>
+  <div class="tbl"><table>
+    <tr><th>Splitter use</th><th>A part is</th><th>Its changed condition</th><th>Why</th></tr>
+    <tr><td>Max-Cut graph</td><td>A smaller graph (at most 20 nodes)</td><td>Ratio target = 1</td><td>Each part must be solved exactly, or the certificate below does not hold</td></tr>
+    <tr><td>Circuit (gate cutting)</td><td>A narrower circuit fragment</td><td>Precision ε / 3<sup>cuts</sup>, run once per variant</td><td>Each cut gate multiplies the shots by 9, and (ε/3)² is that factor in the units the rules already use</td></tr>
+  </table></div>
+  <p>One splitter serves both. It finds the <strong>modules</strong> of a weighted graph: groups of nodes with many connections inside and few between. For Max-Cut the graph is the problem graph. For a circuit it is the <em>interaction graph</em>: qubits as nodes, and an edge's weight is the number of two-qubit gates on that pair, which is exactly what cutting that edge costs. The splitter uses Louvain community detection (Blondel et al., 2008) at two resolutions, then bisects any module that is too large with Kernighan–Lin (1970).</p>
+  <div class="note say"><span class="tag">Say this</span><p>Phase 4 closes the loop the proposal draws from "infeasible" back to "partition". A stuck task is split, every part re-enters the pipeline as an ordinary task, and what comes out is a task graph with a schedule. Nothing in Phases 1–3 had to change to support it.</p></div>
+  <h3>What is not partitioned, and why</h3>
+  <ul>
+    <li><strong>Sampling tasks.</strong> Gate cutting rebuilds expectation values, not bitstring samples, so the random-circuit family passes straight through.</li>
+    <li><strong>Fully entangled circuits.</strong> Every qubit pair is connected, so the splitter finds one module and offers no candidate. The 36- and 40-qubit fully entangled circuits stay REDESIGN, which is the honest answer.</li>
+    <li><strong>Tasks that already work.</strong> A chain ansatz has plenty of places to cut, but an MPS simulator already finishes it in a second. The planner has to turn those candidates down.</li>
+  </ul>
+</section>
+
+<section class="part" id="p4-maxcut">
+  <h2>Max-Cut: split, solve, merge</h2>
+  <p>A 120-node Max-Cut with a 0.9 target is stuck as one task: the classical heuristic only guarantees 0.878, enumeration of 2¹¹⁹ cuts is hopeless, and noisy QAOA is near 0.5. Divide and conquer gets through:</p>
+  <ol>
+    <li><strong>Split</strong> the graph into parts of at most 20 nodes.</li>
+    <li><strong>Solve every part exactly</strong> by enumerating its cuts (2¹⁹ at most, a fraction of a second).</li>
+    <li><strong>Merge.</strong> Each part's solution can be flipped as a whole without changing its own cut. Which parts to flip is itself a small Max-Cut over the parts, with signed weights (an edge between two parts gains or loses depending on the flip). With 10 parts that is 2⁹ patterns, solved exactly.</li>
+    <li><strong>Improve.</strong> Move any single node that has more neighbours on its own side than across, until none is left.</li>
+  </ol>
+  <h3>The certificate</h3>
+  <p>No cut of the whole graph can beat the best cut of every part plus all the edges between parts. So:</p>
+  <div class="eq">optimum ≤ (sum of part optima) + (crossing edges)        certified ratio = cut found / that upper bound ≤ cut found / optimum</div>
+  <p>The certified ratio is a proof about this one instance, and it can only understate the true ratio. Worked example, the 120-node graph in the demo: 10 parts, 53 crossing edges, part optima summing to 119, so the bound is 172. The plan finds a cut of 162. Certified ratio 162 / 172 = <strong>0.942</strong>, above the 0.9 target.</p>
+  <div class="note win"><span class="tag">Why this is the strongest result in Phase 4</span><p>It does not depend on the ground-truth model at all. Every Max-Cut plan in the evaluation is really executed (<code>solve_maxcut</code>), and a plan only counts as working if its certificate clears the target. Over all 59 distinct partitions the certified ratio runs from 0.886 to 1.0 with a median of 0.939. A test checks the certificate against the true optimum on 22-node graphs: cut ≤ optimum ≤ bound, every time.</p></div>
+  <p>Compare with the a-priori guarantee. Before solving anything, all one can promise is m / (m + C) for m edges and C crossing edges, about 0.77 here. The certificate after solving is far tighter, which is why the system certifies rather than promises.</p>
+</section>
+
+<section class="part" id="p4-cut">
+  <h2>Gate cutting</h2>
+  <p>A circuit that falls into modules can be run as separate fragments if the few gates between modules are <em>cut</em>: replaced by operations that act on each side alone. For a CZ gate (Mitarai and Fujii, 2021):</p>
+  <div class="eq">CZ = (local Z rotations) · exp(i·π/4 · Z⊗Z)
+exp(i·π/4 · Z⊗Z) as a channel = ½ [I⊗I] + ½ [Z⊗Z] + ½ Σ<sub>a,b=±1</sub> a·b ( [P<sub>a</sub>⊗R<sub>b</sub>] + [R<sub>a</sub>⊗P<sub>b</sub>] )</div>
+  <p>P<sub>a</sub> projects onto Z = a (measure the qubit and keep the outcome as a sign) and R<sub>b</sub> is a quarter-turn about Z. Folding the measurement sign in, that is <strong>six local circuits</strong> with weights ½, ½, +½, −½, +½, −½. Two numbers follow, and both are in the cost model:</p>
+  <dl class="kv">
+    <dt>γ = 3</dt><dd>The weights sum to 3 in magnitude. Sampling the six circuits and recombining with signs is an unbiased estimate whose variance grows by γ² = 9. So <strong>each cut multiplies the shots by 9</strong>: k cuts cost 9<sup>k</sup>.</dd>
+    <dt>6 variants</dt><dd>A fragment that touches k cut gates must be run in up to 6<sup>k</sup> versions. On a simulator that is 6<sup>k</sup> simulations; this is what decides whether a classical fragment meets its deadline.</dd>
+  </dl>
+  <h3>Checked, not assumed</h3>
+  <p><code>cut_expectation</code> computes ⟨H⟩ using only the fragments and this decomposition. Tests compare it with the uncut statevector value on small circuits (6–9 qubits, 1–2 cuts), including a random circuit split in a place the splitter would never choose. The largest difference is about 10⁻¹⁴. A separate test rebuilds the CZ channel from the six terms on a random two-qubit state and checks γ = 3 and the count of 6 against the config file.</p>
+  <h3>Worked example</h3>
+  <p>Three fully entangled 26-qubit blocks, joined by one CZ each (78 qubits). As one task: too wide for a statevector, 25 ebits across the middle so no MPS, and on the QPU about 3,000 gates give F ≈ 10⁻³. Cut the 2 linking gates. The end blocks touch one cut (6 variants), the middle block two (36 variants). One 26-qubit statevector run takes about 27 s in the ground-truth model, so the fragments take 2.7 min, 16 min and 2.7 min on three nodes, and the task finishes in 16.4 min. Had the fragments needed a QPU, the two cuts would have cost 81 times the shots.</p>
+  <div class="note warn"><span class="tag">The limit to state</span><p>Costs grow exponentially in the number of cuts. With 8 cuts on one fragment there are 1.7 million variants. Cutting works when a few gates hold together blocks that are each hard: the clustered shape (Peng et al., 2020). It does nothing for a circuit that is entangled everywhere.</p></div>
+</section>
+
+<section class="part" id="p4-dag">
+  <h2>Task DAG, schedule and planners</h2>
+  <p>An accepted plan becomes a <strong>task DAG</strong>: nodes are steps tagged classical or quantum with a duration, edges mean "must finish before". A partition is split → parts in parallel → merge. A hybrid task run as it is becomes prepare → QPU job → post-process, using the Phase 1 work split. <code>schedule</code> then places the steps on 4 classical nodes and one QPU that is free after the queue wait, in topological order, each step on whichever resource frees up first. An application of several kernels (<code>config/applications.yaml</code>) is the same thing one level up: kernel DAGs joined along their dependencies and scheduled together.</p>
+  <h3>The plan oracle</h3>
+  <p>For Phase 3 the oracle picks the cheaper feasible way to run one task. For Phase 4 the <strong>plan oracle</strong> executes every candidate partition in the ground-truth model, with fragments transpiled exactly, and picks the cheapest plan that works among the task as it is and every partition. A plan works if every part has a feasible route, the schedule meets the deadline, the shots fit the budget and, for Max-Cut, the certificate clears the target. Regret is defined as in Phase 3.</p>
+  <h3>Four planners</h3>
+  <div class="tbl"><table>
+    <tr><th>Planner</th><th>How it decides</th></tr>
+    <tr><td>No partitioning</td><td>Phase 3 alone. REDESIGN stays REDESIGN.</td></tr>
+    <tr><td>Partition whenever stuck</td><td>If Phase 3 says REDESIGN, take the candidate with the fewest cuts. No check.</td></tr>
+    <tr><td>Rule planner</td><td>Also require that Phase 3 can allocate every part, and that no fragment has more than 2 cuts (36 variants). Both thresholds are in config.</td></tr>
+    <tr><td>Learned planner</td><td>A gradient-boosting classifier trained on executed plans answers "does this candidate work and beat the task as it is?" from pre-execution facts: cuts, cuts per part, part sizes, predicted gates, what Phase 3 says about the whole task and about each part, the deadline and targets. Among accepted candidates it takes the one with the fewest cuts.</td></tr>
+  </table></div>
+  <p>Why learn it? Whether a plan meets its deadline depends on how long each fragment takes to simulate, and that is hidden from the planner, as it would be on a real machine. The learned planner infers it from outcomes; the rule planner replaces it with a fixed cap. Like the Phase 3 allocator, the learned planner hands over to the rule planner for applications larger than the range it was trained on.</p>
+</section>
+
+<section class="part" id="p4-results">
+  <h2>Phase 4 results</h2>
+  <p>The evaluation covers 2,816 applications: the 2,432 Phase 3 tasks plus 384 tasks on clustered circuits (2–4 blocks of 16–30 qubits, 1–2 links, 1–2 layers, both backends). 3,288 candidate plans were executed in the ground truth.</p>
+  <h3>What partitioning changes in the ground truth</h3>
+  <div class="tbl"><table>
+    <tr><th>Application</th><th>As one task</th><th>Best plan</th><th class="num">Tasks</th></tr>
+    <tr><td>Max-Cut</td><td>REDESIGN</td><td>PARTITION</td><td class="num">149 of 149</td></tr>
+    <tr><td>Max-Cut</td><td>CLASSICAL (slow exact solve)</td><td>PARTITION is cheaper</td><td class="num">37</td></tr>
+    <tr><td>Clustered</td><td>REDESIGN</td><td>PARTITION</td><td class="num">202 of 353</td></tr>
+    <tr><td>Clustered</td><td>CLASSICAL (32-qubit statevector)</td><td>PARTITION is cheaper</td><td class="num">31</td></tr>
+    <tr><td>VQE chains</td><td>CLASSICAL (MPS)</td><td>unchanged</td><td class="num">864</td></tr>
+    <tr><td>VQE fully entangled, 36–40 qubits</td><td>REDESIGN</td><td>REDESIGN</td><td class="num">32</td></tr>
+    <tr><td>Random circuits</td><td>any</td><td>unchanged (not partitioned)</td><td class="num">768</td></tr>
+  </table></div>
+  <p><strong>351 of the 749 tasks that are REDESIGN as one task have a working partition (47%).</strong> No task that already works gets worse.</p>
+  <div class="note warn"><span class="tag">Say this before you are asked</span><p>Not one part of any working plan goes to the QPU. In this model the QPU's share of the work is sampling, which cannot be partitioned, and cutting turns oversized optimisation and modular chemistry tasks into classical work. A fragment would only be worth a QPU if it were too wide and too entangled to simulate yet shallow enough to survive noise, and no such fragment occurs in these families. That is a finding about where near-term QPUs help, consistent with Phases 1–3.</p></div>
+  <h3>Planners on held-out workloads</h3>
+  <p>30% of workloads never seen in training (848 applications).</p>
+  <div class="tbl"><table>
+    <tr><th>Planner</th><th class="num">Valid result</th><th class="num">Failed attempts</th><th class="num">Stuck tasks rescued</th><th class="num">Mean regret</th></tr>
+    <tr><td>Rules + R3, no partitioning</td><td class="num">58.6%</td><td class="num">12.7%</td><td class="num">0%</td><td class="num">1,615</td></tr>
+    <tr><td>Phase 3 AI, no partitioning</td><td class="num">69.6%</td><td class="num">4.6%</td><td class="num">0%</td><td class="num">928</td></tr>
+    <tr><td>Partition whenever stuck</td><td class="num">81.0%</td><td class="num">8.5%</td><td class="num">39.5%</td><td class="num">2,875</td></tr>
+    <tr><td>Rule planner</td><td class="num">77.1%</td><td class="num">5.1%</td><td class="num">25.9%</td><td class="num">717</td></tr>
+    <tr><td>Learned planner</td><td class="num best">84.2%</td><td class="num best">1.4%</td><td class="num best">50.6%</td><td class="num best">288</td></tr>
+    <tr><td>Plan oracle</td><td class="num">85.8%</td><td class="num">0%</td><td class="num">50.6%</td><td class="num">0</td></tr>
+  </table></div>
+  <ul>
+    <li><strong>Phase 4 moves the ceiling.</strong> Without partitioning, even a perfect allocator could deliver a result for about 70% of these tasks. With it the ceiling is 86%, and the learned planner reaches 84%.</li>
+    <li><strong>Knowing when not to cut matters.</strong> Partitioning whenever stuck delivers more results than not partitioning, but its regret is three times worse (2,875 against 928), because many clustered plans start and then miss their deadline.</li>
+    <li><strong>The learned planner rescues everything the oracle rescues</strong> on this split. Its remaining mistakes are Phase 3's HYBRID/REDESIGN confusions on sampling tasks, which pass through Phase 4 untouched.</li>
+    <li><strong>Over 5 splits:</strong> learned planner 84.6% ± 0.7% valid results (Phase 3 alone 70.8% ± 1.6%, oracle 86.0% ± 0.8%), regret 530 ± 359 (Phase 3 alone 903 ± 127). The regret varies because a few failed plans are expensive.</li>
+  </ul>
+  <h3>When cutting rescues a clustered circuit</h3>
+  <p>Share of clustered candidates that work in the ground truth, by the circuit variants of the busiest fragment and the deadline:</p>
+  <div class="tbl"><table>
+    <tr><th>Variants (cuts on one fragment)</th><th class="num">30 min</th><th class="num">2 h</th><th class="num">8 h</th><th class="num">24 h</th></tr>
+    <tr><td>6 (1 cut)</td><td class="num">75%</td><td class="num">100%</td><td class="num">100%</td><td class="num">100%</td></tr>
+    <tr><td>36 (2 cuts)</td><td class="num">65%</td><td class="num">78%</td><td class="num">94%</td><td class="num">100%</td></tr>
+    <tr><td>1,296 (4 cuts)</td><td class="num">44%</td><td class="num">56%</td><td class="num">55%</td><td class="num">76%</td></tr>
+    <tr><td>1,679,616 (8 cuts)</td><td class="num">0%</td><td class="num">0%</td><td class="num">0%</td><td class="num">31%</td></tr>
+  </table></div>
+  <p>This is the exponential cost of cutting made visible, and it is the boundary the learned planner has to find. Its most important inputs (permutation importance) are what Phase 3 says about the whole task, the cuts per part, the Max-Cut ratio target and the share of gates that get cut.</p>
+  <h3>Extrapolation, honestly</h3>
+  <p>Train on applications of at most 40 qubits, test on larger ones. Every test application is then outside the trusted range, so the range guard hands both learned components to their rule versions. Partitioning still helps (valid results 40% → 56%, regret 3,072 → 2,835), but the oracle reaches 77%. The gap is the price of having no feedback from large applications yet, the same lesson as Phase 3.</p>
+</section>
+
+<section class="part" id="p4-demo">
+  <h2>Phase 4 demo, explained</h2>
+  <p><code>demo --phase 4</code> runs three applications through all four phases, plans a multi-kernel application, and prints the held-out table. <a href="demo.html"><code>docs/demo.html</code></a> shows the same runs as pictures.</p>
+  <h4 class="sub">Example 1 · 120-node Max-Cut, target 0.9</h4>
+<pre>Phase 1 rules:      <span class="ok">HYBRID</span> via R9: all checks passed: run qaoa as hybrid workflow on nighthawk_r2
+Phase 3 AI:         <span class="bad">REDESIGN</span>  P(REDESIGN)=1.00
+  ground truth as one task: <span class="bad">REDESIGN</span>  (classical: heuristic misses accuracy target; quantum: QAOA ratio 0.502 &lt; target 0.9)
+Phase 4 candidates (fewest cuts first):
+  1. 10 parts (19, 17, 16, 15, 13, 10, ... qubits), 53 cuts
+       parts through Phases 2+3: {'CLASSICAL': 10}   planner: ACCEPT
+       ground truth: works (all 10 parts run, merged in time), certified ratio 0.942
+DECISION: <span class="k">PARTITION</span> (candidate 1)     plan oracle: PARTITION</pre>
+  <p>Three phases, three answers. The rules approve QAOA because the fidelity passes R6. The allocator knows that neither route works. Phase 4 splits the graph into 10 parts, each part is a small Max-Cut that Phase 3 allocates as CLASSICAL, and the merged cut is certified at 0.942.</p>
+  <h4 class="sub">Example 2 · three 26-qubit blocks</h4>
+<pre>Phase 2 prediction: 872 two-qubit gates (exact transpile: 3028)
+Phase 3 AI:         <span class="bad">REDESIGN</span>
+  1. 3 parts (26, 26, 26 qubits), 2 cuts, shots x 81
+       parts through Phases 2+3: {'CLASSICAL': 3}   planner: ACCEPT
+       ground truth: works (all 3 parts run, merged in time)
+  schedule: 982 s
+       1.0 s -&gt;  165.1 s  CPU 2  part1    26 qubits, statevector x 6 variants
+       1.0 s -&gt;  980.7 s  CPU 3  part2    26 qubits, statevector x 36 variants
+       1.0 s -&gt;  165.1 s  CPU 4  part3    26 qubits, statevector x 6 variants</pre>
+  <p>Point at two things. The Phase 2 prediction for the whole circuit is far off (872 against 3,028): clustered circuits are outside its training families, and you should say so. The decision does not depend on it, and the fragments are ordinary fully entangled circuits that it predicts well. Then the schedule: the middle block touches both cuts, so it runs 36 variants and sets the finish time.</p>
+  <h4 class="sub">Example 3 · fully entangled 40 qubits</h4>
+<pre>Phase 4 candidates (fewest cuts first):
+  none: the splitter finds no modules (every qubit pair is entangled)
+DECISION: <span class="bad">REDESIGN</span>     plan oracle: REDESIGN</pre>
+  <p>Show this one on purpose. Partitioning is not magic, and a system that says "no" for the right reason is more convincing than one that always finds a plan.</p>
+  <h4 class="sub">A whole application</h4>
+<pre>$ python -m hybrid_mapper workflow --name screening_pipeline
+  placement  maxcut120_p1                   Phase 3: <span class="bad">REDESIGN</span>  Phase 4: <span class="k">PARTITION</span> split into 10 parts
+  energy     synthetic_clustered3x26_r1_l1  Phase 3: <span class="bad">REDESIGN</span>  Phase 4: <span class="k">PARTITION</span> split into 3 parts
+  sampling   random50_d20                   Phase 3: <span class="ok">HYBRID</span>    Phase 4: <span class="ok">HYBRID</span>    as one task
+  refine     synthetic_vqe100_r2            Phase 3: <span class="cl">CLASSICAL</span> Phase 4: <span class="cl">CLASSICAL</span> as one task
+  task DAG: 21 steps, 31 dependencies
+  finishes in 49.4 min (deadline 480 min), 1164 QPU-s</pre>
+  <p>Four kernels, two of them stuck as single tasks, become one DAG of 21 steps: 20 on the classical nodes and one QPU job that waits 30 minutes in the queue. The pipeline is illustrative, assembled from the benchmark kernels. Run <code>--name tight_deadline</code> to show the other outcome: with 30 minutes and a denser circuit, one kernel has no working plan and is reported as blocked, with the reason.</p>
+</section>
+
 <!-- ================================================================ DEFENDING -->
 <section class="part" id="talk">
   <p class="part-label">Defending it</p>
-  <h2>Talk plan (about 15 minutes)</h2>
+  <h2>Talk plan (about 18 minutes)</h2>
   <div class="tbl"><table>
     <tr><th>Slide</th><th>Content</th><th class="num">Time</th></tr>
     <tr><td>1 · Thesis</td><td>"A triage system that decides where each part of a computation should run."</td><td class="num">0:30</td></tr>
@@ -929,9 +1106,10 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
     <tr><td>6 · Phase 1</td><td>Rules table, algorithm-aware F_min, live demo: fes_sqd vs fes_vqe.</td><td class="num">2:00</td></tr>
     <tr><td>7 · Phase 2</td><td>Extrapolation table; Max-Cut 80 on Nighthawk vs Heron.</td><td class="num">2:00</td></tr>
     <tr><td>8 · Phase 3 setup</td><td>Simulation study; the ground-truth effects; replace vs augment.</td><td class="num">1:30</td></tr>
-    <tr><td>9 · Phase 3 results</td><td>97% vs 55%; disagreement causes; the readable tree.</td><td class="num">1:30</td></tr>
-    <tr><td>10 · Feedback curve</td><td>Extrapolation failure, then regret falling with feedback.</td><td class="num">1:00</td></tr>
-    <tr><td>11 · Limits and next</td><td>Simulated oracle, crude fidelity model, Phases 4–6, ask for QPU access.</td><td class="num">1:00</td></tr>
+    <tr><td>9 · Phase 3 results</td><td>97% vs 58%; disagreement causes; the readable tree.</td><td class="num">1:30</td></tr>
+    <tr><td>10 · Feedback curve</td><td>Extrapolation failure, the range guard, then regret falling with feedback.</td><td class="num">1:00</td></tr>
+    <tr><td>11 · Phase 4</td><td>A part is just another task. Max-Cut certificate (0.942), gate cutting (9× per cut), task DAG. 70% → 84% of tasks get a valid result. Show <code>docs/demo.html</code>.</td><td class="num">2:30</td></tr>
+    <tr><td>12 · Limits and next</td><td>Simulated oracle, crude fidelity model, no QPU fragments, Phases 5–6, ask for QPU access.</td><td class="num">1:00</td></tr>
   </table></div>
 </section>
 
@@ -951,19 +1129,19 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
   <details class="qa"><summary>What is EPLG and why use it instead of the two-qubit gate error?</summary><div class="a"><p>Error per layered gate comes from layer fidelity (McKay et al., 2023): randomised benchmarking on full layers of simultaneous two-qubit gates along a long qubit chain. It includes crosstalk and idling that isolated-pair benchmarks miss, and it is normalised per gate. That is what a real circuit experiences, so it is the right ε for the fidelity formula. It does depend on which chain is measured, so it is a representative figure.</p></div></details>
   <details class="qa"><summary>How did you choose 30 qubits and F_min = 0.05?</summary><div class="a"><p>30 qubits is where statevector memory reaches 16 GiB, a typical workstation; on a 512 GiB node it moves to 35, which is what the Phase 3 ground truth assumes, and threshold tuning picked an even larger memory value. F_min = 0.05 comes from mitigation cost: overhead ≈ 1/F², so 0.05 means about 400× more shots. Both are starting values in <code>rules.yaml</code>, and the SQD example shows why one threshold for all algorithms is wrong.</p></div></details>
   <details class="qa"><summary>Why are SQD and VQE so different on the same circuit?</summary><div class="a"><p>VQE needs an accurate expectation value; noise biases it, and mitigating that bias costs about 1/F² extra shots, which at F ≈ 5×10⁻⁴ is millions of times more. SQD only needs some correct configurations among its samples; classical configuration recovery and diagonalisation in the sampled subspace do the rest, so it tolerates very low fidelity. That is why the rules have an algorithm-aware threshold.</p></div></details>
-  <details class="qa"><summary>What happens when the problem does not fit the QPU?</summary><div class="a"><p>The proposal's Function 4 loops back to algorithm design: fewer qubits (smaller active space, fragmentation), lower depth (better ansatz, circuit cutting), or fewer measurements (grouping, lower precision). Phase 1 outputs REDESIGN with the rule's reason, so the user knows which of those to try. Automating that loop is Phase 4.</p></div></details>
+  <details class="qa"><summary>What happens when the problem does not fit the QPU?</summary><div class="a"><p>The proposal's Function 4 loops back to algorithm design: fewer qubits (smaller active space, fragmentation), lower depth (better ansatz, circuit cutting), or fewer measurements (grouping, lower precision). Phase 1 outputs REDESIGN with the rule's reason, so the user knows which of those to try. Phase 4 automates two of those moves: it splits a problem graph into parts that are solved exactly, and it cuts a modular circuit into fragments. Smaller active spaces and better ansätze still need a person.</p></div></details>
   <details class="qa"><summary>Why is the Nighthawk transpile target a grid and not the real device?</summary><div class="a"><p>There is no fake Nighthawk backend in qiskit-ibm-runtime. A 10×12 square lattice matches its published connectivity (square lattice, four neighbours), so it captures routing overhead, which is what matters for gate counts. It does not carry Nighthawk's calibration data, and the config labels it as a topology proxy.</p></div></details>
 
   <h3>Methodology</h3>
   <details class="qa"><summary>Isn't Phase 3 circular? You built an oracle with effects the rules ignore, then showed AI learns them.</summary><div class="a"><p>It is a simulation study, and we say so. The question it answers is narrower than "does AI beat hardware": can an allocator recover these effects from features available before execution, and does it adapt when given new outcomes? Each effect in the oracle comes from the literature (Vidal on MPS, Goemans–Williamson, published QAOA bounds, measured readout error), not invented to favour the AI. The decisive test is Phase 5, and the pipeline retrains unchanged on real outcomes.</p></div></details>
-  <details class="qa"><summary>Isn't the rules baseline a strawman? R3 exists but never fires in your Phase 3 numbers.</summary><div class="a"><p>We checked that directly. The profiler now computes an entanglement bound from the circuit and sets R3 from it, and Phase 3 reports that variant as its own column. It is the fairest rules baseline: 75% accuracy and regret 1,397, against 55% and 2,855 without it. The AI still reaches 97% with regret 285–420. The rules' remaining mistakes are interactions no single threshold captures, such as the Max-Cut heuristic's 0.878 guarantee against a 0.9 target, or a low-fidelity sampling task that a large shot budget rescues.</p></div></details>
-  <details class="qa"><summary>Is 97% just one lucky train/test split?</summary><div class="a"><p>No. Repeating the 70/30 workload split with 5 seeds gives 98.3% ± 0.7% accuracy and regret 221 ± 154 for gradient boosting. The decision tree is as accurate (97.2% ± 0.4%) but its regret varies much more (494 ± 751), because a handful of expensive mistakes dominate a mean. That is why we report regret, not only accuracy.</p></div></details>
+  <details class="qa"><summary>Isn't the rules baseline a strawman? R3 exists but never fires in your Phase 3 numbers.</summary><div class="a"><p>We checked that directly. The profiler now computes an entanglement bound from the circuit and sets R3 from it, and Phase 3 reports that variant as its own column. It is the fairest rules baseline: 79% accuracy and regret 1,269, against 58% and 2,727 without it. The AI still reaches 95–97% with regret 334–428. The rules' remaining mistakes are interactions no single threshold captures, such as the Max-Cut heuristic's 0.878 guarantee against a 0.9 target, or a low-fidelity sampling task that a large shot budget rescues.</p></div></details>
+  <details class="qa"><summary>Is 97% just one lucky train/test split?</summary><div class="a"><p>No. Repeating the 70/30 workload split with 5 seeds gives 98.1% ± 0.8% accuracy and regret 213 ± 159 for gradient boosting. The decision tree is nearly as accurate (96.9% ± 1.2%) but its regret varies much more (411 ± 525), because a handful of expensive mistakes dominate a mean. That is why we report regret, not only accuracy.</p></div></details>
   <details class="qa"><summary>How do you know your Phase 2 test set doesn't leak?</summary><div class="a"><p>Each circuit is compiled for two backends, and its measurement groups are identical on both. A row-wise random split would put one copy in training and the other in test. We hold out whole circuits on both backends at once; a test checks no circuit appears on both sides. The extrapolation split (train ≤ 40 qubits, test above) cannot leak by construction.</p></div></details>
   <details class="qa"><summary>How do you know whether a decision was correct?</summary><div class="a"><p>For small instances we run every option for real (Phase 1 baselines) and the cheapest option meeting the accuracy target is the oracle label. For large instances we use the ground-truth model. Decisions are scored by accuracy, macro-F1, success rate and regret: the extra cost over the oracle's choice, with failures charged their wasted resources plus a penalty.</p></div></details>
   <details class="qa"><summary>Why does classical-only have lower regret than your rules?</summary><div class="a"><p>Because the costs are asymmetric. A classical attempt that fails is cheap; a QPU job that fails wastes queue time, QPU time and energy. Classical-only fails on a third of tasks, but cheaply. The rules sometimes send doomed jobs to the QPU. This supports the proposal's instinct that classical should be the default, and it is why the gradient-boosting allocator is trained cost-sensitively.</p></div></details>
-  <details class="qa"><summary>Your AI's regret is worse than classical-only on larger problems. Doesn't that sink it?</summary><div class="a"><p>It shows the limit of any model trained on one size range: trees predict flat beyond their data, and the HYBRID/REDESIGN boundary was learned from very few large examples. Its accuracy is still 86% against 33% for the rules. The feedback curve is the answer: with 10% of large workloads fed back, regret drops from 5,753 to 2,268, and at 30% to 397, below every baseline. In deployment you pair a learned allocator with a conservative default for out-of-range inputs and retrain as feedback arrives.</p></div></details>
+  <details class="qa"><summary>Your AI's regret is worse than classical-only on larger problems. Doesn't that sink it?</summary><div class="a"><p>It shows the limit of any model trained on one size range: trees predict flat beyond their data, and the HYBRID/REDESIGN boundary was learned from very few large examples. Its accuracy is still 78% against 33% for the rules. There are two answers. The range guard: outside the sizes it was trained on, the system falls back to the rules with the entanglement check, which cuts regret from 5,907 to 2,324. And the feedback curve: with 10% of large workloads fed back, regret drops from 5,942 to 1,970, and at 30% to 465, below every baseline. A learned allocator is paired with a conservative default for out-of-range inputs and retrained as feedback arrives.</p></div></details>
   <details class="qa"><summary>How did you avoid data leakage?</summary><div class="a"><p>Each circuit appears under four operating conditions, so Phase 3 splits by workload (<code>GroupShuffleSplit</code>), never by row. The Phase 2 predictor used inside each Phase 3 evaluation is trained only on that split's training workloads. Hidden quantities (entanglement bound, realised queue, readout factor) are never features.</p></div></details>
-  <details class="qa"><summary>The classes are imbalanced. How do you handle it?</summary><div class="a"><p>68% CLASSICAL, 21% REDESIGN, 11% HYBRID. We use balanced class weights, report macro-F1 and per-class confusion matrices, and weight training examples by the cost of getting them wrong (Elkan, 2001).</p></div></details>
+  <details class="qa"><summary>The classes are imbalanced. How do you handle it?</summary><div class="a"><p>73% CLASSICAL, 16% REDESIGN, 11% HYBRID. We use balanced class weights, report macro-F1 and per-class confusion matrices, and weight training examples by the cost of getting them wrong (Elkan, 2001).</p></div></details>
   <details class="qa"><summary>Why did you add a hand-made feature? Isn't the model supposed to learn?</summary><div class="a"><p>log₁₀(budget × predicted F) is the number of clean samples the budget buys. The underlying relation is a sum of logs, which axis-aligned tree splits approximate poorly, especially outside the training range. Encoding a physically meaningful quantity is standard practice, it is computed only from pre-execution information, and adding it is reported in the code and the README.</p></div></details>
   <details class="qa"><summary>Worst-case bounds for both QAOA and Goemans–Williamson? Real instances do better.</summary><div class="a"><p>Correct, and we chose worst case on both sides for consistency: both numbers are proven guarantees we can cite (the p = 3 QAOA bound is conditional on a conjecture, which we state). Typical-instance performance of both is better. The assumption is one line in <code>environment.yaml</code>, so the sensitivity is easy to test.</p></div></details>
   <details class="qa"><summary>How will you measure energy for QPU jobs?</summary><div class="a"><p>Classical: node power counters, for example Slurm energy accounting where supported. Quantum: attribute the system's continuous draw by share of QPU time, since the cryostat and electronics run regardless. In the repo both are explicit assumptions (1 kW node, 25 kW QPU system) in config, reported as estimates.</p></div></details>
@@ -974,8 +1152,17 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
   <details class="qa"><summary>Why not just use the analytic formula 2·p·|E|?</summary><div class="a"><p>It counts gates before routing. Routing adds SWAPs, three CNOTs each, and how many depends on topology: an 80-node Max-Cut needs about 1,500 gates on Nighthawk's grid and 2,450 on Heron's heavy-hex, against 480 logical. That difference flips the decision. The analytic baseline is off by 51% on large problems.</p></div></details>
   <details class="qa"><summary>Where is the runtime, energy and error prediction the proposal promised?</summary><div class="a"><p>Implemented in <code>predict.outcome_models</code> and reported, but trained on only 7 simulated hybrid runs, because each label costs a full run. It beats a mean predictor, but n = 7 only shows the pipeline works. Those labels grow with every baseline run and, properly, with real executions in Phase 5. The resource predictors, trained on 608 transpiler-labelled rows, are the solid part of Phase 2.</p></div></details>
 
+  <h3>Phase 4 specifics</h3>
+  <details class="qa"><summary>How is partitioning automated?</summary><div class="a"><p>A splitter finds the modules of a weighted graph: the problem graph for Max-Cut, the qubit-interaction graph for a circuit. Each candidate split is turned into subtasks that are ordinary Phase 3 task rows with changed conditions, so the Phase 2 predictor and Phase 3 allocator score them in about a millisecond. A planner accepts the candidate with the fewest cuts that it expects to work, and the result is scheduled as a task DAG. Phase 1's fixed templates are still used for the work split inside a single hybrid task.</p></div></details>
+  <details class="qa"><summary>Phase 4 never sends a fragment to the QPU. Isn't this a quantum project?</summary><div class="a"><p>It is a resource-mapping project, and the honest mapping in this model is that cutting moves work to classical resources. The fragments that appear are either small enough for a statevector or too deep for the noise. The QPU's work is the sampling tasks from Phase 3, which cannot be partitioned, and they appear in the application DAG as QPU steps. A fragment would be worth a QPU if it were too wide and too entangled to simulate yet shallow: a hardware-native 2D circuit on a matching lattice is the natural candidate, and the planner would pick it up with no code change because every fragment is offered to both routes.</p></div></details>
+  <details class="qa"><summary>Where does "9 times the shots per cut" come from?</summary><div class="a"><p>From the quasi-probability decomposition of the gate. A CZ is rebuilt from six local circuits whose weights are ±½ and sum to γ = 3 in magnitude. Estimating with signed weights inflates the variance by γ², so reaching the same precision takes 9 times the shots, and k cuts take 9<sup>k</sup>. The code holds the six terms explicitly, a test checks they reproduce the CZ channel and that γ is 3, and the planner's 9 comes from that same config value.</p></div></details>
+  <details class="qa"><summary>How do you know a cut circuit gives the right answer?</summary><div class="a"><p>By computing it. <code>cut_expectation</code> evaluates ⟨H⟩ from the fragments alone and tests compare it with the uncut statevector result, to about 10⁻¹⁴, on clustered circuits and on a random circuit split in an arbitrary place. That check is exact and exponential in the number of cuts, so it is a correctness check at small sizes, not how large plans are costed.</p></div></details>
+  <details class="qa"><summary>Is the Max-Cut "certified ratio" a real guarantee?</summary><div class="a"><p>Yes, for that instance. The optimum cannot exceed the sum of the part optima plus the number of crossing edges, and the parts are solved exactly by enumeration, so cut / bound is a proven lower bound on the approximation ratio. It is weaker than the truth because the bound is loose. It is a per-instance certificate, not a worst-case guarantee over all graphs: before solving, the only promise is m / (m + C).</p></div></details>
+  <details class="qa"><summary>Why not solve the 120-node Max-Cut exactly with a better classical solver?</summary><div class="a"><p>For sparse graphs you often can: branch and bound, or dynamic programming over a tree decomposition, go well beyond plain enumeration. The ground-truth model deliberately uses the simplest exact method, with its speed in the config file. A stronger exact solver moves the size at which splitting becomes necessary; it does not remove it, and the planner's logic is the same on either side of that line.</p></div></details>
+  <details class="qa"><summary>Why does blindly partitioning every stuck task do worse than not partitioning?</summary><div class="a"><p>Because a failed plan costs more than declining. A clustered circuit with many cuts needs thousands of fragment simulations; starting them and missing the deadline wastes hours of node time and still yields no result. Regret counts that waste plus the failure penalty. The rule planner avoids it with a cap of 2 cuts per fragment, and the learned planner learns the boundary from executed plans.</p></div></details>
+  <details class="qa"><summary>How good is the schedule?</summary><div class="a"><p>It is a list schedule: steps in topological order, each on the resource that frees up first, with 4 classical nodes and one QPU that becomes available after the queue wait. It respects dependencies and capacity (a test checks both) but it is not optimal and does not model moving data between steps. For these DAGs, which are mostly independent parts between a split and a merge, a list schedule is close to the best possible.</p></div></details>
+
   <h3>Future</h3>
-  <details class="qa"><summary>How is partitioning automated, since you use templates?</summary><div class="a"><p>Phase 1 uses one fixed split per algorithm (for SQD: QPU samples, HPC recovers and diagonalises). Phase 4 represents an application as a task graph (a DAG) with data dependencies and transfer costs, then assigns nodes to resources, possibly cutting oversized quantum parts. Phase 2's millisecond predictors make searching over many partitions affordable.</p></div></details>
   <details class="qa"><summary>Why federated learning instead of one central model?</summary><div class="a"><p>HPC centres have different hardware and private workloads they cannot share. Federated learning lets each improve a shared model while keeping raw job data local. Known challenges are non-IID data across sites and model families that can be averaged. Our power-law models are linear, so FedAvg averages them exactly; tree ensembles need other techniques.</p></div></details>
   <details class="qa"><summary>What would you do with real QPU access?</summary><div class="a"><p>Three things: measure real fidelity against the EPLG estimate to learn the residual; replace the ground-truth model's labels with real outcomes for the tasks that are feasible to run; and repeat the feedback-curve experiment with real data, which is the honest test of the research hypothesis.</p></div></details>
 </section>
@@ -992,15 +1179,19 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
     <li><strong>Simulated hybrid runs.</strong> Runtimes are projected; energy uses assumed power figures; hybrid accuracy reflects a capped SPSA budget.</li>
     <li><strong>Small execution dataset.</strong> Runtime, energy and error models train on 7 runs.</li>
     <li><strong>Phase 3 is a simulation study.</strong> Labels come from a model whose effects come from the literature, compared on worst-case guarantees.</li>
+    <li><strong>Phase 4 fragments are all classical here.</strong> The partitioner is shown to move work to classical resources, not to create quantum advantage.</li>
+    <li><strong>Cutting costs are upper bounds.</strong> 6 variants and 9× shots per cut; better decompositions and classical communication between fragments lower both. Wire cutting is not modelled.</li>
+    <li><strong>Max-Cut parts are capped at 20 nodes</strong> so that every plan in the evaluation is really solved on a laptop. Larger parts would raise the certified ratio.</li>
+    <li><strong>Clustered circuits are outside the Phase 2 and 3 training families.</strong> The whole-circuit prediction is poor; the fragment predictions are in-family.</li>
+    <li><strong>The schedule is a list schedule</strong> on a fixed machine, with no data-movement cost.</li>
   </ul>
 </section>
 
 <section class="part" id="next">
-  <h2>Phases 4–6</h2>
+  <h2>Phases 5–6</h2>
   <div class="tbl"><table>
     <tr><th>Phase</th><th>What it adds</th><th>How the current code extends</th></tr>
-    <tr><td>4 · Automatic partitioning</td><td>Split applications into classical and quantum subtasks as a DAG</td><td>Replace <code>templates.py</code>; score candidate splits with Phase 2 predictors and the Phase 3 allocator</td></tr>
-    <tr><td>5 · QPU integration</td><td>Run selected workloads on real hardware</td><td>Swap the Aer backend in <code>baselines.py</code> for a runtime backend; real outcomes replace <code>environment.py</code> labels</td></tr>
+    <tr><td>5 · QPU integration</td><td>Run selected workloads on real hardware</td><td>Swap the Aer backend in <code>baselines.py</code> for a runtime backend; real outcomes replace <code>environment.py</code> labels for both the allocator and the planner</td></tr>
     <tr><td>6 · Federated learning</td><td>Sites share model updates, not data</td><td>FedAvg over the power-law coefficients; simulate sites as backends or workload families</td></tr>
   </table></div>
 </section>
@@ -1010,25 +1201,33 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
   <dl class="gloss">
     <dt>Ansatz</dt><dd>A parameterised circuit template whose parameters an optimiser tunes.</dd>
     <dt>Bond dimension χ</dt><dd>Size of the link between neighbouring tensors in an MPS; at least 2^(ebits across that cut).</dd>
+    <dt>Certified ratio</dt><dd>For a Max-Cut plan: cut found ÷ (sum of part optima + crossing edges). A proven lower bound on the approximation ratio for that instance.</dd>
     <dt>Chemical accuracy</dt><dd>1.6 mHa ≈ 1 kcal/mol, a common target precision for energies.</dd>
     <dt>Ebit</dt><dd>One unit of entanglement, the amount in one maximally entangled qubit pair.</dd>
     <dt>EPLG</dt><dd>Error per layered gate, from layer-fidelity benchmarking.</dd>
     <dt>Estimator / Sampler</dt><dd>Qiskit primitives returning expectation values / bitstring counts.</dd>
     <dt>FakeFez</dt><dd>A local copy of a real 156-qubit Heron's layout and calibration, used for transpiling and noise.</dd>
+    <dt>Gate cutting</dt><dd>Replacing a two-qubit gate between two parts of a circuit by local operations on each side, at the price of more circuits and more shots.</dd>
     <dt>Heavy-hex</dt><dd>IBM's lattice with at most 3 neighbours per qubit, used by Heron.</dd>
+    <dt>Interaction graph</dt><dd>Qubits as nodes; an edge's weight is the number of two-qubit gates on that pair.</dd>
+    <dt>Louvain</dt><dd>A community-detection method that groups nodes to maximise modularity (many edges inside groups, few between).</dd>
     <dt>Macro-F1</dt><dd>F1 score averaged equally over classes.</dd>
     <dt>MAPE</dt><dd>Mean absolute percentage error.</dd>
     <dt>Measurement group</dt><dd>Pauli terms that commute qubit-wise and can be measured in one circuit.</dd>
     <dt>MPS</dt><dd>Matrix product state, a tensor-network representation efficient for weakly entangled states.</dd>
     <dt>Oracle label</dt><dd>The best decision according to the ground truth, used as the training label and scoring reference.</dd>
+    <dt>Plan oracle</dt><dd>The cheapest plan that works, among the task as it is and every candidate partition, found by executing all of them in the ground truth.</dd>
     <dt>QCSC</dt><dd>Quantum-centric supercomputing: QPUs integrated as part of HPC systems.</dd>
     <dt>QRMI</dt><dd>Quantum Resource Management Interface, used to acquire and release QPUs from Slurm and other managers.</dd>
+    <dt>Quasi-probability decomposition</dt><dd>Writing an operation as a signed weighted sum of operations you can run. The total weight γ sets the shot overhead γ².</dd>
+    <dt>Range guard</dt><dd>Using a learned policy only up to the size that at least 5% of its training tasks reach, and rules beyond it.</dd>
     <dt>Regret</dt><dd>Extra cost of a decision over the best decision.</dd>
     <dt>Routing</dt><dd>Inserting SWAPs so interacting qubits are neighbours on the chip.</dd>
     <dt>Shot</dt><dd>One execution and measurement of a circuit.</dd>
     <dt>SPSA</dt><dd>Simultaneous perturbation stochastic approximation, a two-evaluation gradient estimator for noisy objectives.</dd>
     <dt>SQD</dt><dd>Sample-based quantum diagonalisation: QPU samples configurations, HPC diagonalises in that subspace.</dd>
     <dt>Statevector</dt><dd>The full list of 2ⁿ amplitudes describing an n-qubit state.</dd>
+    <dt>Task DAG</dt><dd>Directed acyclic graph of steps (classical or quantum) whose edges mean "must finish before".</dd>
     <dt>Transpilation</dt><dd>Rewriting a circuit into a device's native gates and connectivity.</dd>
   </dl>
 </section>
@@ -1054,6 +1253,8 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
     <li>Li, G., Ding, Y., Xie, Y. (2019). Tackling the qubit mapping problem for NISQ-era quantum devices (SABRE). <em>ASPLOS</em>.</li>
     <li>Preskill, J. (2018). Quantum computing in the NISQ era and beyond. <em>Quantum</em> 2, 79.</li>
     <li>Peng, T. et al. (2020). Simulating large quantum circuits on a small quantum computer. <em>Phys. Rev. Lett.</em> 125, 150504. Tang, W. et al. (2021). CutQC. <em>ASPLOS</em>.</li>
+    <li>Mitarai, K., Fujii, K. (2021). Constructing a virtual two-qubit gate by sampling single-qubit operations. <em>New J. Phys.</em> 23, 023021.</li>
+    <li>Blondel, V. D., Guillaume, J.-L., Lambiotte, R., Lefebvre, E. (2008). Fast unfolding of communities in large networks. <em>J. Stat. Mech.</em> P10008. Kernighan, B. W., Lin, S. (1970). An efficient heuristic procedure for partitioning graphs. <em>Bell System Technical Journal</em> 49(2), 291–307.</li>
     <li>Giortamis, E. et al. (2025). Qonductor: a cloud orchestrator for quantum computing. <em>SC'25</em>. <a href="https://arxiv.org/abs/2408.04312">arXiv:2408.04312</a></li>
     <li>Xing, L. et al. (2025). Quantum Processing Unit (QPU) processing time prediction with machine learning. <a href="https://arxiv.org/abs/2510.20630">arXiv:2510.20630</a></li>
     <li>IBM (12 March 2026). Reference architecture for quantum-centric supercomputing (press coverage: <a href="https://www.nasdaq.com/press-release/ibm-releases-new-blueprint-quantum-centric-supercomputing-2026-03-12">IBM release</a>).</li>
@@ -1186,7 +1387,7 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
   const J = (t, e, q) => t + 0.001*e + 10*q;
   function classical(t){
     const gates = 3*t.gates, dl = t.deadline*60, m = [];
-    if (t.fam === "maxcut") m.push(["heuristic", 1e-4*1.5*t.n, ENV.gw >= t.ratio]);
+    if (t.fam === "maxcut") m.push(["heuristic", 1e-4*1.5*t.n, ENV.gw >= t.ratio], ["exact enumeration", 2**(t.n-1)*1.5*t.n/1e9, true]);
     else {
       if (16*2**t.n <= ENV.mem) m.push(["statevector", gates*2**t.n*32/ENV.bw, true]);
       const chi = 2**Math.min(t.ebits, Math.floor(t.n/2));
@@ -1195,7 +1396,7 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
     const mm = m.map(([n,s,ok]) => [n, s+ENV.overhead, ok]);
     const ok = mm.filter(([n,s,meets]) => meets && s <= dl);
     if (ok.length) { const [n,s] = ok.reduce((a,b) => a[1] <= b[1] ? a : b); return {ok:true, why:`${n} in ${humanTime(s)}`, J:J(s, s*ENV.nodeW, 0)}; }
-    if (mm.length) { const [n,s,meets] = mm.reduce((a,b) => a[1] <= b[1] ? a : b); return {ok:false, why:`${n} ${meets ? "misses the deadline" : `reaches only ${ENV.gw} < target ${t.ratio}`}`}; }
+    if (mm.length) { const [n,s,meets] = mm.reduce((a,b) => a[1] <= b[1] ? a : b); return {ok:false, why: t.fam === "maxcut" ? `heuristic reaches only ${ENV.gw} < target ${t.ratio}, and enumerating 2^${t.n-1} cuts misses the deadline` : `${n} misses the deadline`}; }
     return {ok:false, why:"too large and too entangled for statevector or MPS"};
   }
   function hybrid(t){
@@ -1247,8 +1448,8 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
   const NS = "http://www.w3.org/2000/svg";
   const el = (tag, attrs, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
   function allocChart(){
-    const rows = [["Classical-only",67.3,1176,"var(--classical)"],["Quantum-only",12.7,75746,"var(--accent)"],["Rules (exact)",54.6,2855,"var(--faint)"],
-      ["Rules + predictions",54.5,2860,"var(--faint)"],["Rules, tuned",57.5,2460,"var(--faint)"],["Rules + R3 check",75.1,1397,"var(--faint)"],["AI: decision tree",96.7,285,"var(--hybrid)"],["AI: boosting",97.1,420,"var(--hybrid)"]];
+    const rows = [["Classical-only",71.0,1043,"var(--classical)"],["Quantum-only",12.7,75746,"var(--accent)"],["Rules (exact)",58.2,2727,"var(--faint)"],
+      ["Rules + predictions",58.1,2732,"var(--faint)"],["Rules, tuned",61.2,2328,"var(--faint)"],["Rules + R3 check",78.7,1269,"var(--faint)"],["AI: decision tree",95.4,334,"var(--hybrid)"],["AI: boosting",97.0,428,"var(--hybrid)"]];
     const W = 720, rowH = 30, top = 34, left = 150, barW = 400, H = top + rows.length*rowH + 30;
     const s = el("svg", {viewBox:`0 0 ${W} ${H}`, width:W, height:H});
     s.appendChild(el("text", {x:left, y:16, fill:"var(--muted)", "font-family":"var(--display)", "font-size":12, "font-weight":700}, "Decision accuracy vs oracle (held-out workloads)"));
@@ -1265,15 +1466,16 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
   }
   function fbChart(){
     const xs = [0,5,10,20,30], series = [
-      ["AI: gradient boosting",[5753,5973,2268,1674,397],"var(--hybrid)",false],
-      ["AI: decision tree",[8968,9136,9034,4632,1234],"var(--accent)",false],
+      ["AI: gradient boosting",[5942,5992,1970,1623,465],"var(--hybrid)",false],
+      ["AI: decision tree",[6004,6026,6040,2357,1334],"var(--accent)",false],
+      ["AI + range guard",[2289,2289,1185,776,575],"var(--ink)",false],
       ["Rules (exact transpile)",[5340,5340,5340,5340,5340],"var(--redesign)",true],
-      ["Rules + R3 check",[2290,2290,2290,2290,2290],"var(--muted)",true],
+      ["Rules + R3 check",[2289,2289,2289,2289,2289],"var(--muted)",true],
       ["Classical-only",[1613,1613,1613,1613,1613],"var(--classical)",true]];
-    const W = 720, H = 330, L = 64, R = 190, T = 22, B = 46, yMax = 10000;
+    const W = 720, H = 330, L = 64, R = 190, T = 22, B = 46, yMax = 7500;
     const X = v => L + (W-L-R)*v/30, Y = v => T + (H-T-B)*(1 - v/yMax);
     const s = el("svg", {viewBox:`0 0 ${W} ${H}`, width:W, height:H});
-    [0,2500,5000,7500,10000].forEach(v => { s.appendChild(el("line", {x1:L, x2:W-R, y1:Y(v), y2:Y(v), stroke:"var(--line)", "stroke-width":1}));
+    [0,2500,5000,7500].forEach(v => { s.appendChild(el("line", {x1:L, x2:W-R, y1:Y(v), y2:Y(v), stroke:"var(--line)", "stroke-width":1}));
       s.appendChild(el("text", {x:L-8, y:Y(v)+4, fill:"var(--faint)", "font-family":"var(--mono)", "font-size":10, "text-anchor":"end"}, v.toLocaleString())); });
     xs.forEach(v => s.appendChild(el("text", {x:X(v), y:H-B+18, fill:"var(--faint)", "font-family":"var(--mono)", "font-size":10, "text-anchor":"middle"}, v + "%")));
     s.appendChild(el("text", {x:(L+W-R)/2, y:H-6, fill:"var(--muted)", "font-family":"var(--display)", "font-size":12, "text-anchor":"middle"}, "Share of large workloads fed back as execution feedback"));
