@@ -296,7 +296,7 @@ flowchart LR
   <p>Everything runs on a laptop with no IBM account. Fake backends carry real device layouts and calibration data, and qiskit-aer simulates noise.</p>
 <pre><span class="dim"># one-time setup (Python 3.11+)</span>
 python3 -m venv .venv &amp;&amp; .venv/bin/pip install -e ".[test]"
-.venv/bin/pytest                                   <span class="dim"># 53 tests, ~40 s</span>
+.venv/bin/pytest                                   <span class="dim"># 56 tests, ~30 s</span>
 
 <span class="k">python -m hybrid_mapper demo</span>                       <span class="dim"># guided tour of all four phases, ~30 s</span>
 python -m hybrid_mapper demo --phase 3             <span class="dim"># one phase only</span>
@@ -966,7 +966,7 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
   </ol>
   <h3>The certificate</h3>
   <p>No cut of the whole graph can beat the best cut of every part plus all the edges between parts. So:</p>
-  <div class="eq">optimum ≤ (sum of part optima) + (crossing edges)        certified ratio = cut found / that upper bound ≤ cut found / optimum</div>
+  <div class="eq">optimum ≤ (sum of part optima) + (crossing edges)<br>certified ratio = cut found / that upper bound ≤ cut found / optimum</div>
   <p>The certified ratio is a proof about this one instance, and it can only understate the true ratio. Worked example, the 120-node graph in the demo: 10 parts, 53 crossing edges, part optima summing to 119, so the bound is 172. The plan finds a cut of 162. Certified ratio 162 / 172 = <strong>0.942</strong>, above the 0.9 target.</p>
   <div class="note win"><span class="tag">Why this is the strongest result in Phase 4</span><p>It does not depend on the ground-truth model at all. Every Max-Cut plan in the evaluation is really executed (<code>solve_maxcut</code>), and a plan only counts as working if its certificate clears the target. Over all 59 distinct partitions the certified ratio runs from 0.886 to 1.0 with a median of 0.939. A test checks the certificate against the true optimum on 22-node graphs: cut ≤ optimum ≤ bound, every time.</p></div>
   <p>Compare with the a-priori guarantee. Before solving anything, all one can promise is m / (m + C) for m edges and C crossing edges, about 0.77 here. The certificate after solving is far tighter, which is why the system certifies rather than promises.</p>
@@ -975,8 +975,7 @@ Phase 3 AI (gradient boosting):  <span class="bad">REDESIGN</span>
 <section class="part" id="p4-cut">
   <h2>Gate cutting</h2>
   <p>A circuit that falls into modules can be run as separate fragments if the few gates between modules are <em>cut</em>: replaced by operations that act on each side alone. For a CZ gate (Mitarai and Fujii, 2021):</p>
-  <div class="eq">CZ = (local Z rotations) · exp(i·π/4 · Z⊗Z)
-exp(i·π/4 · Z⊗Z) as a channel = ½ [I⊗I] + ½ [Z⊗Z] + ½ Σ<sub>a,b=±1</sub> a·b ( [P<sub>a</sub>⊗R<sub>b</sub>] + [R<sub>a</sub>⊗P<sub>b</sub>] )</div>
+  <div class="eq">CZ = (local Z rotations) · exp(i·π/4 · Z⊗Z)<br>exp(i·π/4 · Z⊗Z), as a channel,<br>  = ½ [I⊗I] + ½ [Z⊗Z] + ½ Σ<sub>a,b=±1</sub> a·b ( [P<sub>a</sub>⊗R<sub>b</sub>] + [R<sub>a</sub>⊗P<sub>b</sub>] )</div>
   <p>P<sub>a</sub> projects onto Z = a (measure the qubit and keep the outcome as a sign) and R<sub>b</sub> is a quarter-turn about Z. Folding the measurement sign in, that is <strong>six local circuits</strong> with weights ½, ½, +½, −½, +½, −½. Two numbers follow, and both are in the cost model:</p>
   <dl class="kv">
     <dt>γ = 3</dt><dd>The weights sum to 3 in magnitude. Sampling the six circuits and recombining with signs is an unbiased estimate whose variance grows by γ² = 9. So <strong>each cut multiplies the shots by 9</strong>: k cuts cost 9<sup>k</sup>.</dd>
@@ -985,7 +984,7 @@ exp(i·π/4 · Z⊗Z) as a channel = ½ [I⊗I] + ½ [Z⊗Z] + ½ Σ<sub>a,b=±1
   <h3>Checked, not assumed</h3>
   <p><code>cut_expectation</code> computes ⟨H⟩ using only the fragments and this decomposition. Tests compare it with the uncut statevector value on small circuits (6–9 qubits, 1–2 cuts), including a random circuit split in a place the splitter would never choose. The largest difference is about 10⁻¹⁴. A separate test rebuilds the CZ channel from the six terms on a random two-qubit state and checks γ = 3 and the count of 6 against the config file.</p>
   <h3>Worked example</h3>
-  <p>Three fully entangled 26-qubit blocks, joined by one CZ each (78 qubits). As one task: too wide for a statevector, 25 ebits across the middle so no MPS, and on the QPU about 3,000 gates give F ≈ 10⁻³. Cut the 2 linking gates. The end blocks touch one cut (6 variants), the middle block two (36 variants). One 26-qubit statevector run takes about 27 s in the ground-truth model, so the fragments take 2.7 min, 16 min and 2.7 min on three nodes, and the task finishes in 16.4 min. Had the fragments needed a QPU, the two cuts would have cost 81 times the shots.</p>
+  <p>Three fully entangled 26-qubit blocks, joined by one CZ each (78 qubits). As one task: too wide for a statevector, an entanglement bound of 39 ebits so no MPS, and on the QPU about 3,000 gates give F ≈ 10⁻³. Cut the 2 linking gates. The end blocks touch one cut (6 variants), the middle block two (36 variants). One 26-qubit statevector run takes about 27 s in the ground-truth model, so the fragments take 2.7 min, 16 min and 2.7 min on three nodes, and the task finishes in 16.4 min. Had the fragments needed a QPU, the two cuts would have cost 81 times the shots.</p>
   <div class="note warn"><span class="tag">The limit to state</span><p>Costs grow exponentially in the number of cuts. With 8 cuts on one fragment there are 1.7 million variants. Cutting works when a few gates hold together blocks that are each hard: the clustered shape (Peng et al., 2020). It does nothing for a circuit that is entangled everywhere.</p></div>
 </section>
 
